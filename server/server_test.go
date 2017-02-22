@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	pb "github.com/square/spincycle/agent/rce"
+	pb "github.com/square/rce-agent/rce"
 )
 
 // TODO
