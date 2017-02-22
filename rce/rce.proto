@@ -1,0 +1,53 @@
+// Copyright 2017 Square, Inc.
+
+syntax = "proto3";
+
+package rce;
+
+
+// Interface exported by the rce agent
+service RCEAgent {
+  // Call to get all jobs currently active on rce agent
+  rpc GetJobs(StartTime) returns (stream JobID) {}
+
+  // Call to get the status of a particular job that may or 
+  // may not be currently Active on the host
+  rpc GetJobStatus(JobID) returns (JobStatus) {}
+
+  // Start a Specific Job
+  rpc StartJob(JobRequest) returns (JobStatus) {}
+
+  // Stop an already Running Job. This will be an "ungraceful" kill
+  rpc StopJob(JobID) returns (JobStatus) {}
+
+  // TODO: have a job that can stream the output?
+}
+
+message StartTime {
+  int64 StartTime = 1;
+}
+
+message JobStatus {
+  uint64           JobID =  1;
+  string         JobName =  2;
+  int64           Status =  3;
+  string     CommandName =  4;
+  int64              PID =  5;
+  int64        StartTime =  6;
+  int64       FinishTime =  7;
+  int64         ExitCode =  8;
+  repeated string   Args =  9;
+  repeated string Stdout = 10;
+  repeated string Stderr = 11;
+  string           Error = 12;
+}
+
+message JobID {
+  uint64 JobID = 1;
+}
+
+message JobRequest {
+  string            JobName = 1;
+  string        CommandName = 2;
+  repeated string Arguments = 3;
+}
