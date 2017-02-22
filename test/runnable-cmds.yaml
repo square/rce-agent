@@ -1,0 +1,3 @@
+commands:
+  exitZero: exit 0
+  exitOne: exit 1
