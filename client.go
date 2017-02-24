@@ -3,6 +3,7 @@
 package rce
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/square/rce-agent/pb"
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Interface for sending commands to the remote agent
@@ -74,21 +76,27 @@ type JobRequest struct {
 
 // non-exported intentionally
 type client struct {
-	host  string
-	port  string
-	conn  *grpc.ClientConn
-	agent pb.RCEAgentClient
+	host      string
+	port      string
+	conn      *grpc.ClientConn
+	agent     pb.RCEAgentClient
+	tlsConfig *tls.Config
 }
 
 // Create a new gRPC client
-func NewClient() Client {
-	return &client{}
+func NewClient(tlsConfig *tls.Config) Client {
+	return &client{tlsConfig: tlsConfig}
 }
 
 // Open the connection to the RCE Agent
 func (c *client) Open(host, port string) error {
-	// TODO: enable TLS
-	opt := grpc.WithInsecure()
+	var opt grpc.DialOption
+	if c.tlsConfig == nil {
+		opt = grpc.WithInsecure()
+	} else {
+		creds := credentials.NewTLS(c.tlsConfig)
+		opt = grpc.WithTransportCredentials(creds)
+	}
 	conn, err := grpc.Dial(host+":"+port, opt)
 	if err != nil {
 		return err
