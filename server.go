@@ -62,7 +62,7 @@ type server struct {
 	IDm              *sync.Mutex            // Mutex for nextID
 
 	// server stuff
-	port       string       // Port that this agent is listening on
+	laddr      string       // host:port listen address
 	grpcServer *grpc.Server // gRPC server instance that this agent is using
 }
 
@@ -87,11 +87,10 @@ func (rj *runningJob) CopyStatus() *pb.JobStatus {
 	return jc
 }
 
-// Creates a new server listening on the given port and config file/
-// Creates a new gRPC server, but does not start it. The user needs to call
-// s.Start() for the server to actually start listening for requests.
-// TODO: load tls certs here too somehow
-func NewServer(port string, configFile string) (Server, error) {
+// NewServer creates a new gRPC server listening on the given host:port (laddr)
+// and using the given configFile to load allowed commands. The server is not
+// started.
+func NewServer(laddr string, configFile string) (Server, error) {
 
 	cfg, err := LoadRunnableCommands(configFile)
 	if err != nil {
@@ -103,7 +102,7 @@ func NewServer(port string, configFile string) (Server, error) {
 		nextID:           0,
 		runnableCommands: cfg.Commands,
 		IDm:              &sync.Mutex{},
-		port:             port,
+		laddr:            laddr,
 	}
 	grpcServer := grpc.NewServer()
 	pb.RegisterRCEAgentServer(grpcServer, s)
@@ -142,7 +141,7 @@ func LoadRunnableCommands(configFile string) (*Config, error) {
 // It is up to the user to call s.Stop() to properly stop the
 // server.
 func (s *server) Start() error {
-	lis, err := net.Listen("tcp", ":"+s.port)
+	lis, err := net.Listen("tcp", s.laddr)
 	if err != nil {
 		return err
 	}
