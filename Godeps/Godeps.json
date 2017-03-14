@@ -4,6 +4,10 @@
 	"GodepVersion": "v77",
 	"Deps": [
 		{
+			"ImportPath": "github.com/go-cmd/cmd",
+			"Rev": "5abb8e8f950b6f71f389673b1f6b6276fd3c1417"
+		},
+		{
 			"ImportPath": "github.com/go-test/deep",
 			"Rev": "64dede292689f3a95b6fa7fb6f3efec6c2fecf06"
 		},
