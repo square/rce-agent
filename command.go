@@ -20,7 +20,6 @@ type Runnables []Command
 
 var (
 	ErrCommandNotFound = errors.New("command not found")
-	ErrNoSuchFile      = errors.New("file not found")
 
 	// Errors from failing validation
 	ErrDuplicateName = errors.New("duplicate command name found")
@@ -94,5 +93,3 @@ func (c Command) Path() string {
 func (c Command) Args() []string {
 	return c.Exec[1:]
 }
-
-// TODO: do a NoSuchFile check before a command gets run

@@ -3,78 +3,85 @@
 package rce_test
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
+	"context"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/square/rce-agent"
 	"github.com/square/rce-agent/pb"
-	"golang.org/x/net/context"
 )
 
 const PORT = "5501"
 
-// TODO
-func TestGetJobs(t *testing.T) {
-}
+const SERVER_TEST_CONFIG = "test/server-test-commands.yaml"
 
-func fakeExecCommand(command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestHelperProcess", "--", command}
-	cs = append(cs, args...)
-	cmd := exec.Command(os.Args[0], cs...)
-	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
-	return cmd
-}
-
-func TestHelperProcess(t *testing.T) {
-	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
-		return
-	}
-	fmt.Printf("result")
-	// some code here to check arguments perhaps?
-	os.Exit(0)
-}
-
-// TODO
-var execCommand = exec.Command
-
-// TODO: lol these tests don't work
-func TestRunJob(t *testing.T) {
-	s, err := rce.NewServer(PORT, "test/runnable-cmds.yaml")
+func TestExitZero(t *testing.T) {
+	s, err := rce.NewServer(PORT, SERVER_TEST_CONFIG)
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("server: %+v\n", s)
 
 	jr := &pb.JobRequest{
-		JobName:     "foo",
-		CommandName: "exitZero",
+		CommandName: "exit.zero",
 		Arguments:   []string{},
 	}
+	t.Logf("request: %+v\n", jr)
 
 	status, err := s.StartJob(context.TODO(), jr)
 	if err != nil {
 		t.Error(err)
 	}
+	t.Logf("initial status: %+v\n", status)
 
-	if status.JobName != "foo" {
-		t.Errorf("got JobName = %s, expected exitZero", status.JobName)
+	jobID := &pb.JobID{JobID: status.JobID}
+
+	// Wait for it to finish
+	s.WaitOnJob(context.TODO(), jobID)
+
+	status, err = s.GetJobStatus(context.TODO(), jobID)
+	t.Logf("status: %+v\nerr: %+v", status, err)
+
+	if status.FinishTime == 0 {
+		t.Errorf("got FinishTime = %d, expected > 0", status.FinishTime)
 	}
 
-	// @todo @fixme This causes a segfault
-	/*
-
-		if status.FinishTime != 0 {
-			t.Errorf("got FinishTime = %d, expected zero", status.FinishTime)
-		}
-
-		// Let job finish
-		time.Sleep(100 * time.Millisecond)
-
-		if status.FinishTime == 0 {
-			t.Errorf("got FinishTime = %d, expected > 0", status.FinishTime)
-		}
-	*/
+	if status.ExitCode != 0 {
+		t.Errorf("got ExitCode = %d, expected 0", status.ExitCode)
+	}
 }
 
-// TODO: write more tests
+func TestArgs(t *testing.T) {
+	s, err := rce.NewServer(PORT, SERVER_TEST_CONFIG)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("server: %+v\n", s)
+
+	message := "some.message"
+
+	jr := &pb.JobRequest{
+		CommandName: "echo",
+		Arguments:   []string{message},
+	}
+	t.Logf("request: %+v\n", jr)
+
+	status, err := s.StartJob(context.TODO(), jr)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("initial status: %+v\n", status)
+
+	jobID := &pb.JobID{JobID: status.JobID}
+
+	// Wait for it to finish
+	s.WaitOnJob(context.TODO(), jobID)
+
+	status, err = s.GetJobStatus(context.TODO(), jobID)
+	t.Logf("status: %+v\nerr: %+v", status, err)
+
+	diff := deep.Equal(jr.Arguments, status.Stdout)
+	if diff != nil {
+		t.Error(diff)
+	}
+}
