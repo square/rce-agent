@@ -4,7 +4,7 @@ package rce
 
 import (
 	"bufio"
-	"fmt" // TODO: start using grpclog for logging instead
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -18,6 +18,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"google.golang.org/grpc"
+	log "google.golang.org/grpc/grpclog"
 
 	pb "github.com/square/rce-agent/pb"
 	"golang.org/x/net/context"
@@ -157,7 +158,7 @@ func (s *server) Stop() error {
 
 // GetJobs list all jobs that have started after since.
 func (s *server) GetJobs(since *pb.StartTime, stream pb.RCEAgent_GetJobsServer) error {
-	fmt.Println("Getting all jobs")
+	log.Println("Getting all jobs.")
 	s.jobsM.RLock()
 	defer s.jobsM.RUnlock()
 	return nil
@@ -174,17 +175,17 @@ func (s *server) GetJobs(since *pb.StartTime, stream pb.RCEAgent_GetJobsServer) 
 
 // GetJobStatus returns the job status of the given job id.
 func (s *server) GetJobStatus(ctx context.Context, id *pb.JobID) (*pb.JobStatus, error) {
-	fmt.Printf("Status request for %d\n", id.JobID)
+	log.Printf("job=%d: Status request received.", id.JobID)
 	return s.getJobStatus(id.JobID)
 }
 
-// GetJobStatus returns the job status of the given job id.
+// getJobStatus returns the job status of the given job id.
 func (s *server) getJobStatus(id uint64) (*pb.JobStatus, error) {
 	s.jobsM.RLock()
 	job, ok := s.allJobs[id]
 	s.jobsM.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("Job with id %d not found.", id)
+		return nil, fmt.Errorf("job=%d: Job not found.", id)
 	}
 
 	jc := job.CopyStatus()
@@ -194,31 +195,32 @@ func (s *server) getJobStatus(id uint64) (*pb.JobStatus, error) {
 // Stops an already running job by sending the process a SIGTERM signal.
 // If the job does not exist, or is not running, then an error is returned.
 func (s *server) StopJob(ctx context.Context, id *pb.JobID) (*pb.JobStatus, error) {
-	fmt.Printf("Kill Job %d Received\n", id.JobID)
+	log.Printf("job=%d: Stop request received.", id.JobID)
 	s.jobsM.RLock()
 	job, ok := s.allJobs[id.JobID]
 	s.jobsM.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("Job with id %d not found.", id.JobID)
+		return nil, fmt.Errorf("job=%d: Job not found.", id.JobID)
 	}
 
 	if job.Status.Status != STATUS_RUNNING {
-		return nil, fmt.Errorf("Job %d not running.", id.JobID)
+		return nil, fmt.Errorf("job=%d: Job not running.", id.JobID)
 	}
 
 	// TODO: how would we test this?
 	proc, err := os.FindProcess(int(job.Status.PID))
 	if err != nil {
-		return nil, fmt.Errorf("Process with pid %d not found: %v", job.Status.PID, err)
+		return nil, fmt.Errorf("job=%d: Process with pid %d not found: %v", id.JobID, job.Status.PID, err)
 	}
 
 	// TODO: figure out the correct signal to send
 	err = proc.Signal(syscall.SIGTERM)
 	if err != nil {
-		return nil, fmt.Errorf("Error killing pid %d: %v", job.Status.PID, err)
+		return nil, fmt.Errorf("job=%d: Error killing pid %d: %v", id.JobID, job.Status.PID, err)
 	}
 	// TODO: need to wait until the job goroutine finishes updating status?
 
+	log.Printf("job=%d: Successfully killed pid %d", id.JobID, job.Status.PID)
 	return s.getJobStatus(id.JobID)
 }
 
@@ -226,7 +228,6 @@ func (s *server) StopJob(ctx context.Context, id *pb.JobID) (*pb.JobStatus, erro
 // return the status for that job. It is up to the client to pull for the job status
 // to determine completion/output.
 func (s *server) StartJob(ctx context.Context, details *pb.JobRequest) (*pb.JobStatus, error) {
-	fmt.Printf("Job received!\n")
 	newJobStatus := &pb.JobStatus{
 		JobID:       s.getNewJobID(),
 		JobName:     details.JobName,
@@ -236,6 +237,8 @@ func (s *server) StartJob(ctx context.Context, details *pb.JobRequest) (*pb.JobS
 		ExitCode:    -1,
 		Args:        details.Arguments,
 	}
+	log.Printf("job=%d: New job received (name: %s, commandName: %s, args: \"%s\").", newJobStatus.JobID,
+		newJobStatus.JobName, newJobStatus.CommandName, strings.Join(newJobStatus.Args, " "))
 
 	newJob := &runningJob{
 		Status:  newJobStatus,
@@ -270,7 +273,7 @@ func copyPipeToStringArray(rc io.ReadCloser, dest *[]string, m *sync.Mutex) {
 
 // TODO: refactor this to be more testable
 func (s *server) runJob(job *runningJob) {
-	fmt.Printf("Running job %d\n", job.Status.JobID)
+	log.Printf("job=%d: Running job.", job.Status.JobID)
 	commandToExecute, ok := s.runnableCommands[job.Status.CommandName]
 	if !ok {
 		//TODO: make a function for creating errors like these
@@ -313,9 +316,9 @@ func (s *server) runJob(job *runningJob) {
 	////////////////////////////////////////////////////////
 	// Start Command                                      //
 	////////////////////////////////////////////////////////
-	fmt.Printf("Starting %d command...\n", job.Status.JobID)
+	log.Printf("job=%d: Starting the command.", job.Status.JobID)
 	cmd.Start()
-	fmt.Printf("Command %d started...\n", job.Status.JobID)
+	log.Printf("job=%d: Command started.", job.Status.JobID)
 
 	// Update status of job after it starts running
 	job.statusM.Lock()
@@ -331,9 +334,9 @@ func (s *server) runJob(job *runningJob) {
 	////////////////////////////////////////////////////////////
 	// Wait for command to finish                             //
 	////////////////////////////////////////////////////////////
-	fmt.Printf("Waiting for %d command...\n", job.Status.JobID)
+	log.Printf("job=%d: Waiting for the command to finish (Pid=%d).", job.Status.JobID, job.Status.PID)
 	exitError := cmd.Wait()
-	fmt.Printf("%d command done!\n", job.Status.JobID)
+	log.Printf("job=%d: Command done.", job.Status.JobID)
 
 	////////////////////////////////////////////////////////////
 	// Update job status once command is completed            //
@@ -342,7 +345,10 @@ func (s *server) runJob(job *runningJob) {
 
 	// set finish time of job
 	job.Status.FinishTime = time.Now().Unix()
-	fmt.Printf("Job Finished %d:%d running\n", job.Status.JobID, job.Status.PID)
+	log.Printf("job=%d: Job finished (status: %d, startTime: %d, finishTime: %d, exitCode: %d, error: %s, "+
+		"stdout: \"%s\", stderr: \"%s\".", job.Status.JobID, job.Status.Status, job.Status.StartTime,
+		job.Status.FinishTime, job.Status.ExitCode, job.Status.Error, strings.Join(job.Status.Stdout, " "),
+		strings.Join(job.Status.Stderr, " "))
 
 	// Collect the exit code of the command
 	if exitError != nil {
@@ -354,7 +360,7 @@ func (s *server) runJob(job *runningJob) {
 				job.Status.Error = exiterr.Error()
 			}
 		} else {
-			fmt.Printf("Job finished with error %v\n", exitError)
+			log.Printf("job=%d: Job finished with error: %v", job.Status.JobID, exitError)
 			job.Status.Error = exitError.Error()
 		}
 	} else {
