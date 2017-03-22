@@ -22,24 +22,24 @@ func TestExitZero(t *testing.T) {
 	}
 	t.Logf("server: %+v\n", s)
 
-	jr := &pb.JobRequest{
+	jr := &pb.CommandRequest{
 		CommandName: "exit.zero",
 		Arguments:   []string{},
 	}
 	t.Logf("request: %+v\n", jr)
 
-	status, err := s.StartJob(context.TODO(), jr)
+	status, err := s.StartCommand(context.TODO(), jr)
 	if err != nil {
 		t.Error(err)
 	}
 	t.Logf("initial status: %+v\n", status)
 
-	jobID := &pb.JobID{JobID: status.JobID}
+	cmdID := &pb.CommandID{CommandID: status.CommandID}
 
 	// Wait for it to finish
-	s.WaitOnJob(context.TODO(), jobID)
+	s.WaitOnCommand(context.TODO(), cmdID)
 
-	status, err = s.GetJobStatus(context.TODO(), jobID)
+	status, err = s.GetCommandStatus(context.TODO(), cmdID)
 	t.Logf("status: %+v\nerr: %+v", status, err)
 
 	if status.FinishTime == 0 {
@@ -60,24 +60,24 @@ func TestArgs(t *testing.T) {
 
 	message := "some.message"
 
-	jr := &pb.JobRequest{
+	jr := &pb.CommandRequest{
 		CommandName: "echo",
 		Arguments:   []string{message},
 	}
 	t.Logf("request: %+v\n", jr)
 
-	status, err := s.StartJob(context.TODO(), jr)
+	status, err := s.StartCommand(context.TODO(), jr)
 	if err != nil {
 		t.Error(err)
 	}
 	t.Logf("initial status: %+v\n", status)
 
-	jobID := &pb.JobID{JobID: status.JobID}
+	cmdID := &pb.CommandID{CommandID: status.CommandID}
 
 	// Wait for it to finish
-	s.WaitOnJob(context.TODO(), jobID)
+	s.WaitOnCommand(context.TODO(), cmdID)
 
-	status, err = s.GetJobStatus(context.TODO(), jobID)
+	status, err = s.GetCommandStatus(context.TODO(), cmdID)
 	t.Logf("status: %+v\nerr: %+v", status, err)
 
 	diff := deep.Equal(jr.Arguments, status.Stdout)

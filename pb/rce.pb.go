@@ -10,9 +10,9 @@ It is generated from these files:
 
 It has these top-level messages:
 	StartTime
-	JobStatus
-	JobID
-	JobRequest
+	CommandStatus
+	CommandID
+	CommandRequest
 */
 package pb
 
@@ -52,152 +52,136 @@ func (m *StartTime) GetStartTime() int64 {
 	return 0
 }
 
-type JobStatus struct {
-	JobID       uint64   `protobuf:"varint,1,opt,name=JobID" json:"JobID,omitempty"`
-	JobName     string   `protobuf:"bytes,2,opt,name=JobName" json:"JobName,omitempty"`
-	Status      int64    `protobuf:"varint,3,opt,name=Status" json:"Status,omitempty"`
-	CommandName string   `protobuf:"bytes,4,opt,name=CommandName" json:"CommandName,omitempty"`
-	PID         int64    `protobuf:"varint,5,opt,name=PID" json:"PID,omitempty"`
-	StartTime   int64    `protobuf:"varint,6,opt,name=StartTime" json:"StartTime,omitempty"`
-	FinishTime  int64    `protobuf:"varint,7,opt,name=FinishTime" json:"FinishTime,omitempty"`
-	ExitCode    int64    `protobuf:"varint,8,opt,name=ExitCode" json:"ExitCode,omitempty"`
-	Args        []string `protobuf:"bytes,9,rep,name=Args" json:"Args,omitempty"`
-	Stdout      []string `protobuf:"bytes,10,rep,name=Stdout" json:"Stdout,omitempty"`
-	Stderr      []string `protobuf:"bytes,11,rep,name=Stderr" json:"Stderr,omitempty"`
-	Error       string   `protobuf:"bytes,12,opt,name=Error" json:"Error,omitempty"`
+type CommandStatus struct {
+	CommandID   uint64   `protobuf:"varint,1,opt,name=CommandID" json:"CommandID,omitempty"`
+	Status      int64    `protobuf:"varint,2,opt,name=Status" json:"Status,omitempty"`
+	CommandName string   `protobuf:"bytes,3,opt,name=CommandName" json:"CommandName,omitempty"`
+	PID         int64    `protobuf:"varint,4,opt,name=PID" json:"PID,omitempty"`
+	StartTime   int64    `protobuf:"varint,5,opt,name=StartTime" json:"StartTime,omitempty"`
+	FinishTime  int64    `protobuf:"varint,6,opt,name=FinishTime" json:"FinishTime,omitempty"`
+	ExitCode    int64    `protobuf:"varint,7,opt,name=ExitCode" json:"ExitCode,omitempty"`
+	Args        []string `protobuf:"bytes,8,rep,name=Args" json:"Args,omitempty"`
+	Stdout      []string `protobuf:"bytes,9,rep,name=Stdout" json:"Stdout,omitempty"`
+	Stderr      []string `protobuf:"bytes,10,rep,name=Stderr" json:"Stderr,omitempty"`
+	Error       string   `protobuf:"bytes,11,opt,name=Error" json:"Error,omitempty"`
 }
 
-func (m *JobStatus) Reset()                    { *m = JobStatus{} }
-func (m *JobStatus) String() string            { return proto.CompactTextString(m) }
-func (*JobStatus) ProtoMessage()               {}
-func (*JobStatus) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (m *CommandStatus) Reset()                    { *m = CommandStatus{} }
+func (m *CommandStatus) String() string            { return proto.CompactTextString(m) }
+func (*CommandStatus) ProtoMessage()               {}
+func (*CommandStatus) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
-func (m *JobStatus) GetJobID() uint64 {
+func (m *CommandStatus) GetCommandID() uint64 {
 	if m != nil {
-		return m.JobID
+		return m.CommandID
 	}
 	return 0
 }
 
-func (m *JobStatus) GetJobName() string {
-	if m != nil {
-		return m.JobName
-	}
-	return ""
-}
-
-func (m *JobStatus) GetStatus() int64 {
+func (m *CommandStatus) GetStatus() int64 {
 	if m != nil {
 		return m.Status
 	}
 	return 0
 }
 
-func (m *JobStatus) GetCommandName() string {
+func (m *CommandStatus) GetCommandName() string {
 	if m != nil {
 		return m.CommandName
 	}
 	return ""
 }
 
-func (m *JobStatus) GetPID() int64 {
+func (m *CommandStatus) GetPID() int64 {
 	if m != nil {
 		return m.PID
 	}
 	return 0
 }
 
-func (m *JobStatus) GetStartTime() int64 {
+func (m *CommandStatus) GetStartTime() int64 {
 	if m != nil {
 		return m.StartTime
 	}
 	return 0
 }
 
-func (m *JobStatus) GetFinishTime() int64 {
+func (m *CommandStatus) GetFinishTime() int64 {
 	if m != nil {
 		return m.FinishTime
 	}
 	return 0
 }
 
-func (m *JobStatus) GetExitCode() int64 {
+func (m *CommandStatus) GetExitCode() int64 {
 	if m != nil {
 		return m.ExitCode
 	}
 	return 0
 }
 
-func (m *JobStatus) GetArgs() []string {
+func (m *CommandStatus) GetArgs() []string {
 	if m != nil {
 		return m.Args
 	}
 	return nil
 }
 
-func (m *JobStatus) GetStdout() []string {
+func (m *CommandStatus) GetStdout() []string {
 	if m != nil {
 		return m.Stdout
 	}
 	return nil
 }
 
-func (m *JobStatus) GetStderr() []string {
+func (m *CommandStatus) GetStderr() []string {
 	if m != nil {
 		return m.Stderr
 	}
 	return nil
 }
 
-func (m *JobStatus) GetError() string {
+func (m *CommandStatus) GetError() string {
 	if m != nil {
 		return m.Error
 	}
 	return ""
 }
 
-type JobID struct {
-	JobID uint64 `protobuf:"varint,1,opt,name=JobID" json:"JobID,omitempty"`
+type CommandID struct {
+	CommandID uint64 `protobuf:"varint,1,opt,name=CommandID" json:"CommandID,omitempty"`
 }
 
-func (m *JobID) Reset()                    { *m = JobID{} }
-func (m *JobID) String() string            { return proto.CompactTextString(m) }
-func (*JobID) ProtoMessage()               {}
-func (*JobID) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (m *CommandID) Reset()                    { *m = CommandID{} }
+func (m *CommandID) String() string            { return proto.CompactTextString(m) }
+func (*CommandID) ProtoMessage()               {}
+func (*CommandID) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
-func (m *JobID) GetJobID() uint64 {
+func (m *CommandID) GetCommandID() uint64 {
 	if m != nil {
-		return m.JobID
+		return m.CommandID
 	}
 	return 0
 }
 
-type JobRequest struct {
-	JobName     string   `protobuf:"bytes,1,opt,name=JobName" json:"JobName,omitempty"`
-	CommandName string   `protobuf:"bytes,2,opt,name=CommandName" json:"CommandName,omitempty"`
-	Arguments   []string `protobuf:"bytes,3,rep,name=Arguments" json:"Arguments,omitempty"`
+type CommandRequest struct {
+	CommandName string   `protobuf:"bytes,1,opt,name=CommandName" json:"CommandName,omitempty"`
+	Arguments   []string `protobuf:"bytes,2,rep,name=Arguments" json:"Arguments,omitempty"`
 }
 
-func (m *JobRequest) Reset()                    { *m = JobRequest{} }
-func (m *JobRequest) String() string            { return proto.CompactTextString(m) }
-func (*JobRequest) ProtoMessage()               {}
-func (*JobRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (m *CommandRequest) Reset()                    { *m = CommandRequest{} }
+func (m *CommandRequest) String() string            { return proto.CompactTextString(m) }
+func (*CommandRequest) ProtoMessage()               {}
+func (*CommandRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
-func (m *JobRequest) GetJobName() string {
-	if m != nil {
-		return m.JobName
-	}
-	return ""
-}
-
-func (m *JobRequest) GetCommandName() string {
+func (m *CommandRequest) GetCommandName() string {
 	if m != nil {
 		return m.CommandName
 	}
 	return ""
 }
 
-func (m *JobRequest) GetArguments() []string {
+func (m *CommandRequest) GetArguments() []string {
 	if m != nil {
 		return m.Arguments
 	}
@@ -206,9 +190,9 @@ func (m *JobRequest) GetArguments() []string {
 
 func init() {
 	proto.RegisterType((*StartTime)(nil), "rce.StartTime")
-	proto.RegisterType((*JobStatus)(nil), "rce.JobStatus")
-	proto.RegisterType((*JobID)(nil), "rce.JobID")
-	proto.RegisterType((*JobRequest)(nil), "rce.JobRequest")
+	proto.RegisterType((*CommandStatus)(nil), "rce.CommandStatus")
+	proto.RegisterType((*CommandID)(nil), "rce.CommandID")
+	proto.RegisterType((*CommandRequest)(nil), "rce.CommandRequest")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -222,15 +206,15 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for RCEAgent service
 
 type RCEAgentClient interface {
-	// Call to get all jobs currently active on rce agent
-	GetJobs(ctx context.Context, in *StartTime, opts ...grpc.CallOption) (RCEAgent_GetJobsClient, error)
-	// Call to get the status of a particular job that may or
+	// Start a Specific Command
+	StartCommand(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (*CommandStatus, error)
+	// Call to get the status of a particular command that may or
 	// may not be currently Active on the host
-	GetJobStatus(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*JobStatus, error)
-	// Start a Specific Job
-	StartJob(ctx context.Context, in *JobRequest, opts ...grpc.CallOption) (*JobStatus, error)
-	// Stop an already Running Job. This will be an "ungraceful" kill
-	StopJob(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*JobStatus, error)
+	GetCommandStatus(ctx context.Context, in *CommandID, opts ...grpc.CallOption) (*CommandStatus, error)
+	// Call to get all commands currently active on rce agent
+	GetCommands(ctx context.Context, in *StartTime, opts ...grpc.CallOption) (RCEAgent_GetCommandsClient, error)
+	// Stop an already Running Command. This will be an "ungraceful" kill
+	StopCommand(ctx context.Context, in *CommandID, opts ...grpc.CallOption) (*CommandStatus, error)
 }
 
 type rCEAgentClient struct {
@@ -241,12 +225,30 @@ func NewRCEAgentClient(cc *grpc.ClientConn) RCEAgentClient {
 	return &rCEAgentClient{cc}
 }
 
-func (c *rCEAgentClient) GetJobs(ctx context.Context, in *StartTime, opts ...grpc.CallOption) (RCEAgent_GetJobsClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_RCEAgent_serviceDesc.Streams[0], c.cc, "/rce.RCEAgent/GetJobs", opts...)
+func (c *rCEAgentClient) StartCommand(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (*CommandStatus, error) {
+	out := new(CommandStatus)
+	err := grpc.Invoke(ctx, "/rce.RCEAgent/StartCommand", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &rCEAgentGetJobsClient{stream}
+	return out, nil
+}
+
+func (c *rCEAgentClient) GetCommandStatus(ctx context.Context, in *CommandID, opts ...grpc.CallOption) (*CommandStatus, error) {
+	out := new(CommandStatus)
+	err := grpc.Invoke(ctx, "/rce.RCEAgent/GetCommandStatus", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *rCEAgentClient) GetCommands(ctx context.Context, in *StartTime, opts ...grpc.CallOption) (RCEAgent_GetCommandsClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RCEAgent_serviceDesc.Streams[0], c.cc, "/rce.RCEAgent/GetCommands", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &rCEAgentGetCommandsClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -256,44 +258,26 @@ func (c *rCEAgentClient) GetJobs(ctx context.Context, in *StartTime, opts ...grp
 	return x, nil
 }
 
-type RCEAgent_GetJobsClient interface {
-	Recv() (*JobID, error)
+type RCEAgent_GetCommandsClient interface {
+	Recv() (*CommandID, error)
 	grpc.ClientStream
 }
 
-type rCEAgentGetJobsClient struct {
+type rCEAgentGetCommandsClient struct {
 	grpc.ClientStream
 }
 
-func (x *rCEAgentGetJobsClient) Recv() (*JobID, error) {
-	m := new(JobID)
+func (x *rCEAgentGetCommandsClient) Recv() (*CommandID, error) {
+	m := new(CommandID)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *rCEAgentClient) GetJobStatus(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*JobStatus, error) {
-	out := new(JobStatus)
-	err := grpc.Invoke(ctx, "/rce.RCEAgent/GetJobStatus", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *rCEAgentClient) StartJob(ctx context.Context, in *JobRequest, opts ...grpc.CallOption) (*JobStatus, error) {
-	out := new(JobStatus)
-	err := grpc.Invoke(ctx, "/rce.RCEAgent/StartJob", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *rCEAgentClient) StopJob(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*JobStatus, error) {
-	out := new(JobStatus)
-	err := grpc.Invoke(ctx, "/rce.RCEAgent/StopJob", in, out, c.cc, opts...)
+func (c *rCEAgentClient) StopCommand(ctx context.Context, in *CommandID, opts ...grpc.CallOption) (*CommandStatus, error) {
+	out := new(CommandStatus)
+	err := grpc.Invoke(ctx, "/rce.RCEAgent/StopCommand", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -303,92 +287,92 @@ func (c *rCEAgentClient) StopJob(ctx context.Context, in *JobID, opts ...grpc.Ca
 // Server API for RCEAgent service
 
 type RCEAgentServer interface {
-	// Call to get all jobs currently active on rce agent
-	GetJobs(*StartTime, RCEAgent_GetJobsServer) error
-	// Call to get the status of a particular job that may or
+	// Start a Specific Command
+	StartCommand(context.Context, *CommandRequest) (*CommandStatus, error)
+	// Call to get the status of a particular command that may or
 	// may not be currently Active on the host
-	GetJobStatus(context.Context, *JobID) (*JobStatus, error)
-	// Start a Specific Job
-	StartJob(context.Context, *JobRequest) (*JobStatus, error)
-	// Stop an already Running Job. This will be an "ungraceful" kill
-	StopJob(context.Context, *JobID) (*JobStatus, error)
+	GetCommandStatus(context.Context, *CommandID) (*CommandStatus, error)
+	// Call to get all commands currently active on rce agent
+	GetCommands(*StartTime, RCEAgent_GetCommandsServer) error
+	// Stop an already Running Command. This will be an "ungraceful" kill
+	StopCommand(context.Context, *CommandID) (*CommandStatus, error)
 }
 
 func RegisterRCEAgentServer(s *grpc.Server, srv RCEAgentServer) {
 	s.RegisterService(&_RCEAgent_serviceDesc, srv)
 }
 
-func _RCEAgent_GetJobs_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _RCEAgent_StartCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommandRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RCEAgentServer).StartCommand(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/rce.RCEAgent/StartCommand",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RCEAgentServer).StartCommand(ctx, req.(*CommandRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RCEAgent_GetCommandStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommandID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RCEAgentServer).GetCommandStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/rce.RCEAgent/GetCommandStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RCEAgentServer).GetCommandStatus(ctx, req.(*CommandID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RCEAgent_GetCommands_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StartTime)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(RCEAgentServer).GetJobs(m, &rCEAgentGetJobsServer{stream})
+	return srv.(RCEAgentServer).GetCommands(m, &rCEAgentGetCommandsServer{stream})
 }
 
-type RCEAgent_GetJobsServer interface {
-	Send(*JobID) error
+type RCEAgent_GetCommandsServer interface {
+	Send(*CommandID) error
 	grpc.ServerStream
 }
 
-type rCEAgentGetJobsServer struct {
+type rCEAgentGetCommandsServer struct {
 	grpc.ServerStream
 }
 
-func (x *rCEAgentGetJobsServer) Send(m *JobID) error {
+func (x *rCEAgentGetCommandsServer) Send(m *CommandID) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _RCEAgent_GetJobStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JobID)
+func _RCEAgent_StopCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommandID)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RCEAgentServer).GetJobStatus(ctx, in)
+		return srv.(RCEAgentServer).StopCommand(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/rce.RCEAgent/GetJobStatus",
+		FullMethod: "/rce.RCEAgent/StopCommand",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RCEAgentServer).GetJobStatus(ctx, req.(*JobID))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RCEAgent_StartJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JobRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RCEAgentServer).StartJob(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rce.RCEAgent/StartJob",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RCEAgentServer).StartJob(ctx, req.(*JobRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RCEAgent_StopJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JobID)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RCEAgentServer).StopJob(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rce.RCEAgent/StopJob",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RCEAgentServer).StopJob(ctx, req.(*JobID))
+		return srv.(RCEAgentServer).StopCommand(ctx, req.(*CommandID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -398,22 +382,22 @@ var _RCEAgent_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*RCEAgentServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetJobStatus",
-			Handler:    _RCEAgent_GetJobStatus_Handler,
+			MethodName: "StartCommand",
+			Handler:    _RCEAgent_StartCommand_Handler,
 		},
 		{
-			MethodName: "StartJob",
-			Handler:    _RCEAgent_StartJob_Handler,
+			MethodName: "GetCommandStatus",
+			Handler:    _RCEAgent_GetCommandStatus_Handler,
 		},
 		{
-			MethodName: "StopJob",
-			Handler:    _RCEAgent_StopJob_Handler,
+			MethodName: "StopCommand",
+			Handler:    _RCEAgent_StopCommand_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "GetJobs",
-			Handler:       _RCEAgent_GetJobs_Handler,
+			StreamName:    "GetCommands",
+			Handler:       _RCEAgent_GetCommands_Handler,
 			ServerStreams: true,
 		},
 	},
@@ -423,28 +407,27 @@ var _RCEAgent_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("rce.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 363 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x52, 0xd1, 0x4e, 0xc2, 0x40,
-	0x10, 0xa4, 0x14, 0x68, 0xbb, 0x10, 0x34, 0x1b, 0x63, 0x2e, 0x04, 0x4d, 0xd3, 0x17, 0x21, 0x51,
-	0x62, 0xf4, 0x0b, 0x08, 0xa0, 0xa1, 0x0f, 0xc6, 0x14, 0x7f, 0xa0, 0x85, 0x13, 0xfb, 0xd0, 0x1e,
-	0x5e, 0xaf, 0x89, 0xff, 0xc6, 0xcf, 0x99, 0xee, 0x15, 0x28, 0x48, 0x7c, 0xdb, 0x99, 0xd9, 0xdd,
-	0xcc, 0xcd, 0x2d, 0x38, 0x72, 0xc9, 0x47, 0x1b, 0x29, 0x94, 0x40, 0x53, 0x2e, 0xb9, 0x37, 0x04,
-	0x67, 0xa1, 0x42, 0xa9, 0x3e, 0xe2, 0x84, 0x63, 0xbf, 0x02, 0x98, 0xe1, 0x1a, 0x03, 0x33, 0x38,
-	0x10, 0xde, 0xb6, 0x0e, 0x8e, 0x2f, 0xa2, 0x85, 0x0a, 0x55, 0x9e, 0xe1, 0x15, 0x34, 0x7d, 0x11,
-	0xcd, 0xa7, 0xd4, 0xd7, 0x08, 0x34, 0x40, 0x06, 0x96, 0x2f, 0xa2, 0xb7, 0x30, 0xe1, 0xac, 0xee,
-	0x1a, 0x03, 0x27, 0xd8, 0x41, 0xbc, 0x86, 0x96, 0x9e, 0x64, 0x26, 0x2d, 0x2e, 0x11, 0xba, 0xd0,
-	0x9e, 0x88, 0x24, 0x09, 0xd3, 0x15, 0x4d, 0x35, 0x68, 0xaa, 0x4a, 0xe1, 0x25, 0x98, 0xef, 0xf3,
-	0x29, 0x6b, 0xd2, 0x58, 0x51, 0x1e, 0xfb, 0x6c, 0x9d, 0xf8, 0xc4, 0x5b, 0x80, 0x97, 0x38, 0x8d,
-	0xb3, 0x2f, 0x92, 0x2d, 0x92, 0x2b, 0x0c, 0xf6, 0xc0, 0x9e, 0xfd, 0xc4, 0x6a, 0x22, 0x56, 0x9c,
-	0xd9, 0xa4, 0xee, 0x31, 0x22, 0x34, 0xc6, 0x72, 0x9d, 0x31, 0xc7, 0x35, 0x07, 0x4e, 0x40, 0xb5,
-	0x76, 0xbe, 0x12, 0xb9, 0x62, 0x40, 0x6c, 0x89, 0x4a, 0x9e, 0x4b, 0xc9, 0xda, 0x7b, 0x9e, 0x4b,
-	0x59, 0x24, 0x33, 0x93, 0x52, 0x48, 0xd6, 0xa1, 0xb7, 0x68, 0xe0, 0xdd, 0x94, 0x79, 0x9d, 0x0f,
-	0xce, 0xfb, 0x04, 0xf0, 0x45, 0x14, 0xf0, 0xef, 0x9c, 0x67, 0xaa, 0x1a, 0xa3, 0x71, 0x1c, 0xe3,
-	0x49, 0x5c, 0xf5, 0xbf, 0x71, 0xf5, 0xc1, 0x19, 0xcb, 0x75, 0x9e, 0xf0, 0x54, 0x15, 0x59, 0x17,
-	0xce, 0x0e, 0xc4, 0xd3, 0xd6, 0x00, 0x3b, 0x98, 0xcc, 0xc6, 0x6b, 0x9e, 0x2a, 0x1c, 0x82, 0xf5,
-	0xca, 0x95, 0x2f, 0xa2, 0x0c, 0xbb, 0xa3, 0xe2, 0x30, 0xf6, 0x21, 0xf6, 0x80, 0xb0, 0xf6, 0x56,
-	0x7b, 0x34, 0xf0, 0x1e, 0x3a, 0xba, 0xb5, 0xfc, 0xb6, 0x8a, 0xde, 0xeb, 0xee, 0x6a, 0xad, 0x79,
-	0x35, 0x7c, 0x00, 0x9b, 0x56, 0xf9, 0x22, 0xc2, 0x8b, 0x9d, 0x5a, 0x3e, 0xee, 0x4c, 0xfb, 0x1d,
-	0x58, 0x0b, 0x25, 0x36, 0x45, 0xf7, 0xbf, 0x7b, 0xa3, 0x16, 0x5d, 0xee, 0xf3, 0x6f, 0x00, 0x00,
-	0x00, 0xff, 0xff, 0xdd, 0xbb, 0xb2, 0x8e, 0xc6, 0x02, 0x00, 0x00,
+	// 348 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x8c, 0x92, 0xc1, 0x4e, 0xc2, 0x40,
+	0x10, 0x86, 0x29, 0x05, 0xa4, 0x53, 0x25, 0x64, 0x34, 0x66, 0x43, 0x88, 0x69, 0x7a, 0xc2, 0x0b,
+	0x51, 0xb9, 0xe8, 0x91, 0x00, 0x1a, 0x2e, 0x86, 0x14, 0x5f, 0xa0, 0xc2, 0x06, 0x7b, 0x68, 0x17,
+	0xa7, 0xd3, 0xc4, 0x97, 0xf2, 0xb9, 0x7c, 0x0d, 0xd3, 0xed, 0x42, 0x0b, 0x46, 0xe3, 0xad, 0xff,
+	0x37, 0x33, 0xbb, 0x7f, 0xff, 0x59, 0x70, 0x68, 0x25, 0x87, 0x5b, 0x52, 0xac, 0xd0, 0xa6, 0x95,
+	0xf4, 0xaf, 0xc1, 0x59, 0x72, 0x48, 0xfc, 0x12, 0xc5, 0x12, 0xfb, 0x15, 0x21, 0x2c, 0xcf, 0x1a,
+	0xd8, 0x41, 0x09, 0xfc, 0xcf, 0x3a, 0x9c, 0x4d, 0x54, 0x1c, 0x87, 0xc9, 0x7a, 0xc9, 0x21, 0x67,
+	0x69, 0xde, 0x6f, 0xc0, 0x7c, 0xaa, 0xfb, 0x1b, 0x41, 0x09, 0xf0, 0x12, 0x5a, 0x45, 0x9f, 0xa8,
+	0xeb, 0xa3, 0x8c, 0x42, 0x0f, 0x5c, 0xd3, 0xf4, 0x1c, 0xc6, 0x52, 0xd8, 0x9e, 0x35, 0x70, 0x82,
+	0x2a, 0xc2, 0x2e, 0xd8, 0x8b, 0xf9, 0x54, 0x34, 0xf4, 0x58, 0xfe, 0x79, 0xe8, 0xac, 0x79, 0xe4,
+	0x0c, 0xaf, 0x00, 0x1e, 0xa3, 0x24, 0x4a, 0xdf, 0x74, 0xb9, 0xa5, 0xcb, 0x15, 0x82, 0x3d, 0x68,
+	0xcf, 0x3e, 0x22, 0x9e, 0xa8, 0xb5, 0x14, 0x27, 0xba, 0xba, 0xd7, 0x88, 0xd0, 0x18, 0xd3, 0x26,
+	0x15, 0x6d, 0xcf, 0x1e, 0x38, 0x81, 0xfe, 0x2e, 0x9c, 0xaf, 0x55, 0xc6, 0xc2, 0xd1, 0xd4, 0x28,
+	0xc3, 0x25, 0x91, 0x80, 0x3d, 0x97, 0x44, 0x78, 0x01, 0xcd, 0x19, 0x91, 0x22, 0xe1, 0xea, 0x7f,
+	0x29, 0x44, 0x1e, 0x6d, 0x19, 0xc6, 0x9f, 0x51, 0xf9, 0x0b, 0xe8, 0x18, 0x11, 0xc8, 0xf7, 0x4c,
+	0xa6, 0x7c, 0x1c, 0x92, 0xf5, 0x33, 0xa4, 0x3e, 0x38, 0x63, 0xda, 0x64, 0xb1, 0x4c, 0x38, 0x4f,
+	0x38, 0xf7, 0x53, 0x82, 0xbb, 0x2f, 0x0b, 0xda, 0xc1, 0x64, 0x36, 0xde, 0xc8, 0x84, 0xf1, 0x01,
+	0x4e, 0x75, 0x58, 0x66, 0x1c, 0xcf, 0x87, 0xf9, 0x2b, 0x38, 0xbc, 0xb1, 0x87, 0x55, 0x58, 0xac,
+	0xca, 0xaf, 0xe1, 0x3d, 0x74, 0x9f, 0x24, 0x1f, 0xae, 0xbd, 0x53, 0xed, 0x9c, 0x4f, 0x7f, 0x99,
+	0xbc, 0x05, 0xb7, 0x9c, 0xdc, 0x0d, 0xed, 0x77, 0xd6, 0x3b, 0x3a, 0xc4, 0xaf, 0xdd, 0x58, 0x38,
+	0x02, 0x77, 0xc9, 0x6a, 0xbb, 0xb3, 0xf9, 0xaf, 0x7b, 0x5e, 0x5b, 0xfa, 0x35, 0x8f, 0xbe, 0x03,
+	0x00, 0x00, 0xff, 0xff, 0x5d, 0xdb, 0xad, 0x50, 0xda, 0x02, 0x00, 0x00,
 }
