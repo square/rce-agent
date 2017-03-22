@@ -20,34 +20,32 @@ func TestExitZero(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("server: %+v\n", s)
 
-	jr := &pb.CommandRequest{
-		CommandName: "exit.zero",
-		Arguments:   []string{},
+	c := &pb.Command{
+		Name:      "exit.zero",
+		Arguments: []string{},
 	}
-	t.Logf("request: %+v\n", jr)
 
-	status, err := s.StartCommand(context.TODO(), jr)
+	id, err := s.Start(context.TODO(), c)
 	if err != nil {
 		t.Error(err)
 	}
-	t.Logf("initial status: %+v\n", status)
-
-	cmdID := &pb.CommandID{CommandID: status.CommandID}
 
 	// Wait for it to finish
-	s.WaitOnCommand(context.TODO(), cmdID)
-
-	status, err = s.GetCommandStatus(context.TODO(), cmdID)
-	t.Logf("status: %+v\nerr: %+v", status, err)
-
-	if status.FinishTime == 0 {
-		t.Errorf("got FinishTime = %d, expected > 0", status.FinishTime)
+	gotStatus, err := s.Wait(context.TODO(), id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotStatus == nil {
+		t.Fatal("got nil pb.Status")
 	}
 
-	if status.ExitCode != 0 {
-		t.Errorf("got ExitCode = %d, expected 0", status.ExitCode)
+	if gotStatus.StopTime == 0 {
+		t.Errorf("got StopTime = %d, expected > 0", gotStatus.StopTime)
+	}
+
+	if gotStatus.ExitCode != 0 {
+		t.Errorf("got ExitCode = %d, expected 0", gotStatus.ExitCode)
 	}
 }
 
@@ -56,32 +54,62 @@ func TestArgs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("server: %+v\n", s)
 
 	message := "some.message"
 
-	jr := &pb.CommandRequest{
-		CommandName: "echo",
-		Arguments:   []string{message},
+	c := &pb.Command{
+		Name:      "echo",
+		Arguments: []string{message},
 	}
-	t.Logf("request: %+v\n", jr)
 
-	status, err := s.StartCommand(context.TODO(), jr)
+	id, err := s.Start(context.TODO(), c)
 	if err != nil {
 		t.Error(err)
 	}
-	t.Logf("initial status: %+v\n", status)
-
-	cmdID := &pb.CommandID{CommandID: status.CommandID}
+	if id == nil {
+		t.Fatal("got nil pb.ID")
+	}
+	if id.ID == "" {
+		t.Fatal("got empty pd.ID.ID, expected a UUID")
+	}
 
 	// Wait for it to finish
-	s.WaitOnCommand(context.TODO(), cmdID)
+	gotStatus, err := s.Wait(context.TODO(), id)
+	if err != nil {
+		t.Error(err)
+	}
+	if gotStatus == nil {
+		t.Fatal("got nil pb.Status")
+	}
 
-	status, err = s.GetCommandStatus(context.TODO(), cmdID)
-	t.Logf("status: %+v\nerr: %+v", status, err)
+	if gotStatus.StartTime <= 0 {
+		t.Errorf("StartTime <= 0, expected > 0: %d", gotStatus.StartTime)
+	}
+	if gotStatus.StopTime <= 0 {
+		t.Errorf("StopTime <= 0, expected > 0: %d", gotStatus.StopTime)
+	}
+	if gotStatus.StopTime <= gotStatus.StartTime {
+		t.Errorf("StopTime %d <= StartTime %d, expected it to be greater",
+			gotStatus.StopTime, gotStatus.StartTime)
+	}
+	gotStatus.StartTime = 0
+	gotStatus.StopTime = 0
 
-	diff := deep.Equal(jr.Arguments, status.Stdout)
-	if diff != nil {
+	if gotStatus.PID <= 0 {
+		t.Errorf("PID <= 0, expected > 0: %d", gotStatus.PID)
+	}
+	gotStatus.PID = 0
+
+	expectStatus := &pb.Status{
+		ID:     id.ID,
+		Name:   "echo",
+		State:  pb.STATE_COMPLETE,
+		Args:   []string{message},
+		Stdout: []string{message},
+		Stderr: []string{},
+	}
+	if diff := deep.Equal(gotStatus, expectStatus); diff != nil {
+		t.Logf("%+v", gotStatus)
 		t.Error(diff)
 	}
 }

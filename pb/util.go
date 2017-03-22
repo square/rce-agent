@@ -3,14 +3,13 @@ package pb
 import "fmt"
 
 // Prints cmd status to stdout. A useful debugging tool.
-func (s *CommandStatus) Print() {
-	fmt.Printf("CommandName %v \n", s.CommandName)
-	fmt.Printf("CommandID   %v \n", s.CommandID)
+func (s *Status) Print() {
+	fmt.Printf("ID          %v \n", s.ID)
+	fmt.Printf("Name        %v \n", s.Name)
 	fmt.Printf("PID         %v \n", s.PID)
-	fmt.Printf("Status      %v \n", s.Status)
-	fmt.Printf("CommandName %v \n", s.CommandName)
+	fmt.Printf("State       %v \n", s.State)
 	fmt.Printf("StartTime   %v \n", s.StartTime)
-	fmt.Printf("FinishTime  %v \n", s.FinishTime)
+	fmt.Printf("FinishTime  %v \n", s.StopTime)
 	fmt.Printf("ExitCode    %v \n", s.ExitCode)
 	fmt.Printf("Args        %v \n", s.Args)
 	fmt.Printf("Stdout      %v \n", s.Stdout)

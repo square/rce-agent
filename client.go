@@ -21,31 +21,14 @@ type Client interface {
 	// Closes the connection to the agent.
 	Close() error
 
-	// Get All commandss that have been submitted after the input time
-	GetCommands(since time.Time) ([]uint64, error)
+	// Returns the agent hostname and port.
+	AgentAddr() (string, string)
 
-	// Get the status of the given cmd id.
-	// An error is returned if the cmdid does not exist
-	GetCommandStatus(cmdID uint64) (*pb.CommandStatus, error)
-
-	// Starts a cmd. This is a non-blocking operation.
-	// A cmd status will be returned immediately. It is up to the
-	// client user to continuously poll for status.
-	StartCommand(cmdName string, args []string) (*pb.CommandStatus, error)
-
-	// Stops a cmd given the cmd id.
-	// If the cmd id is not found, or the cmd is not currently running,
-	// a non-nil error will be returned.
-	// This will issue a SIGTERM signal to the running cmd. The cmd status
-	// of that cmd will be returned. Because that cmd is killed with a SIGTERM
-	// the exit code will not be available.
-	StopCommand(cmdID uint64) (*pb.CommandStatus, error)
-
-	// Get the hostname of the agent that the client is connected to.
-	GetAgentHostname() string
-
-	// Get the port of the agent that the client is connected to.
-	GetAgentPort() string
+	Start(cmdName string, args []string) (id string, err error)
+	Wait(id string) (*pb.Status, error)
+	GetStatus(id string) (*pb.Status, error)
+	Stop(id string) (*pb.Status, error)
+	Running() ([]string, error)
 }
 
 type client struct {
@@ -81,7 +64,6 @@ func (c *client) Open(host, port string) error {
 	return nil
 }
 
-// Close the connection to the RCE Agent
 func (c *client) Close() error {
 	if c.conn != nil {
 		return c.conn.Close()
@@ -89,91 +71,63 @@ func (c *client) Close() error {
 	return nil
 }
 
-// Get the hostname of the agent that this client connects to.
-func (c *client) GetAgentHostname() string {
-	return c.host
+func (c *client) AgentAddr() (string, string) {
+	return c.host, c.port
 }
 
-// Get the port of the agent that this client connects to.
-func (c *client) GetAgentPort() string {
-	return c.port
-}
-
-// Queries the agent for all CommandIDs that have been submitted before the input time.
-// Agents (currently) do not persist cmd data between restarts, so any cmds
-// that have occured prior to the most recent start will not be returned.
-func (c *client) GetCommands(since time.Time) ([]uint64, error) {
-	startTime := &pb.StartTime{
-		StartTime: since.Unix(),
+func (c *client) Start(cmdName string, args []string) (string, error) {
+	cmd := &pb.Command{
+		Name:      cmdName,
+		Arguments: args,
 	}
 
-	cmds := []uint64{}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	stream, err := c.agent.GetCommands(ctx, startTime)
+	id, err := c.agent.Start(ctx, cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return id.ID, nil
+}
+
+func (c *client) Wait(id string) (*pb.Status, error) {
+	return c.agent.Wait(context.TODO(), &pb.ID{ID: id})
+}
+
+func (c *client) GetStatus(id string) (*pb.Status, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	return c.agent.GetStatus(ctx, &pb.ID{ID: id})
+}
+
+func (c *client) Stop(id string) (*pb.Status, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	return c.agent.Stop(ctx, &pb.ID{ID: id})
+}
+
+func (c *client) Running() ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	stream, err := c.agent.Running(ctx, &pb.Empty{})
 	if err != nil {
 		return nil, err
 	}
 
+	ids := []string{}
 	for {
-		cmdStatus, err := stream.Recv()
+		id, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return nil, err
 		}
-
-		cmds = append(cmds, cmdStatus.CommandID)
+		ids = append(ids, id.ID)
 	}
 
-	return cmds, nil
-}
-
-// Given the id of a cmd, return the status of that cmd.
-// A nil CommandStatus and a non-nil error will be returned if the
-// cmd cannot be found.
-func (c *client) GetCommandStatus(cmdID uint64) (*pb.CommandStatus, error) {
-	req := &pb.CommandID{
-		CommandID: cmdID,
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	return c.agent.GetCommandStatus(ctx, req)
-}
-
-// Given the id of a cmd, stop that cmd. If the cmd is not found, or the cmd
-// is not currently running. A non-nil error will be returned, and CommandStatus will
-// be nil.
-func (c *client) StopCommand(cmdID uint64) (*pb.CommandStatus, error) {
-	req := &pb.CommandID{
-		CommandID: cmdID,
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	return c.agent.StopCommand(ctx, req)
-}
-
-// Start a given cmd.
-// TODO: consider taking a CommandRequest struct as input instead
-func (c *client) StartCommand(cmdName string, args []string) (*pb.CommandStatus, error) {
-	request := &pb.CommandRequest{
-		CommandName: cmdName,
-		Arguments:   args,
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	status, err := c.agent.StartCommand(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.GetCommandStatus(status.CommandID)
+	return ids, nil
 }

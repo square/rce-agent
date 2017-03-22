@@ -1,56 +1,52 @@
 // Copyright 2017 Square, Inc.
 
-package rce
+package cmd_test
 
 import (
-	"io/ioutil"
-	"path/filepath"
 	"testing"
 
 	"github.com/go-test/deep"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/square/rce-agent/cmd"
 )
 
 var err error
 
 func TestFindByName(t *testing.T) {
-	cmd := Command{
+	spec := cmd.Spec{
 		Name: "found",
 		Exec: []string{"/some/path", "arg1"},
 	}
 
-	rc := Runnables{
-		cmd,
-		Command{
+	rc := cmd.Runnable{
+		spec,
+		cmd.Spec{
 			Name: "other.command",
 			Exec: []string{"/other/path"},
 		},
 	}
 
-	var f Command
-
-	f, err = rc.FindByName(cmd.Name)
+	f, err := rc.FindByName(spec.Name)
 	if err != nil {
 		t.Error("command not found")
 	}
 
 	// Finds the command
-	diff := deep.Equal(f, cmd)
+	diff := deep.Equal(f, spec)
 	if diff != nil {
 		t.Error("wrong command found")
 	}
 
 	// Returns ErrCommandNotFound if not found
-	f, err = rc.FindByName(cmd.Name + ".NOT")
-	if err != ErrCommandNotFound {
+	f, err = rc.FindByName(spec.Name + ".NOT")
+	if err != cmd.ErrCommandNotFound {
 		t.Error("error not returned when not found")
 	}
 }
 
 func TestValidateNoDuplicates(t *testing.T) {
-	good := Runnables{
-		Command{"one", []string{}},
-		Command{"two", []string{}},
+	good := cmd.Runnable{
+		cmd.Spec{"one", []string{}},
+		cmd.Spec{"two", []string{}},
 	}
 
 	err = good.ValidateNoDuplicates()
@@ -58,9 +54,9 @@ func TestValidateNoDuplicates(t *testing.T) {
 		t.Error("error returned when no duplicates existed")
 	}
 
-	bad := Runnables{
-		Command{"one", []string{}},
-		Command{"one", []string{}},
+	bad := cmd.Runnable{
+		cmd.Spec{"one", []string{}},
+		cmd.Spec{"one", []string{}},
 	}
 
 	err = bad.ValidateNoDuplicates()
@@ -70,8 +66,8 @@ func TestValidateNoDuplicates(t *testing.T) {
 }
 
 func TestValidateAbsPath(t *testing.T) {
-	good := Command{"good", []string{"/bin/ls"}}
-	bad := Command{"bad", []string{"./bin/tr"}}
+	good := cmd.Spec{"good", []string{"/bin/ls"}}
+	bad := cmd.Spec{"bad", []string{"./bin/tr"}}
 
 	if good.ValidateAbsPath() != nil {
 		t.Error("expected good validation failed")
@@ -83,33 +79,21 @@ func TestValidateAbsPath(t *testing.T) {
 }
 
 func TestLoadCommands(t *testing.T) {
-	configFile := "test/runnable-cmds.yaml"
-
-	dir, _ := filepath.Abs(configFile)
-	f, _ := ioutil.ReadFile(dir)
-
-	var conf struct {
-		Commands Runnables `yaml:"commands"`
+	got, err := cmd.LoadCommands("../test/runnable-cmds.yaml")
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	yaml.Unmarshal(f, &conf)
-
-	cmds := conf.Commands
-
-	t.Logf("Loaded: %+v\n", cmds)
-
-	expected := Runnables{
-		Command{
+	expect := cmd.Runnable{
+		cmd.Spec{
 			Name: "exit.zero",
 			Exec: []string{"/usr/bin/true"},
 		},
-		Command{
+		cmd.Spec{
 			Name: "exit.one",
 			Exec: []string{"/bin/false", "some-arg"},
 		},
 	}
-
-	diff := deep.Equal(cmds, expected)
+	diff := deep.Equal(got, expect)
 	if diff != nil {
 		t.Error(diff)
 	}
