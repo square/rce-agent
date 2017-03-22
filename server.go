@@ -11,44 +11,39 @@ import (
 	"syscall"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
-	"google.golang.org/grpc"
-	log "google.golang.org/grpc/grpclog"
-
 	"github.com/go-cmd/cmd"
 	pb "github.com/square/rce-agent/pb"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	log "google.golang.org/grpc/grpclog"
+	"gopkg.in/yaml.v2"
 )
 
-// Interface for the RCE Agent Server
-// TODO: all these should be renamed from "Job" to "Command"
+// A Server accepts RPC calls to execute allowed commands.
 type Server interface {
-
-	// Get all jobs after a specific start point
-	GetJobs(since *pb.StartTime, stream pb.RCEAgent_GetJobsServer) error
-
-	// Get the status of the job with the specified id
-	GetJobStatus(ctx context.Context, id *pb.JobID) (*pb.JobStatus, error)
-
-	// Start a new job. This is a non-blocking call.
-	StartJob(ctx context.Context, details *pb.JobRequest) (*pb.JobStatus, error)
-	// TODO: new rpc fn to stream output?
-
-	// Given a job ID, stop that job.
-	StopJob(ctx context.Context, id *pb.JobID) (*pb.JobStatus, error)
-
 	// Start the server. This is a non-blocking call.
 	Start() error
 
 	// Stop the server.
 	Stop() error
 
-	// Blocks until jobID is complete
-	WaitOnJob(ctx context.Context, id *pb.JobID) error
+	// Get all cmds after a specific start point
+	GetCommands(since *pb.StartTime, stream pb.RCEAgent_GetCommandsServer) error
+
+	// Get the status of the cmd with the specified id
+	GetCommandStatus(ctx context.Context, id *pb.CommandID) (*pb.CommandStatus, error)
+
+	// Start a new cmd. This is a non-blocking call.
+	StartCommand(ctx context.Context, details *pb.CommandRequest) (*pb.CommandStatus, error)
+
+	// Given a cmd ID, stop that cmd.
+	StopCommand(ctx context.Context, id *pb.CommandID) (*pb.CommandStatus, error)
+
+	// Blocks until cmdID is complete
+	WaitOnCommand(ctx context.Context, id *pb.CommandID) error
 }
 
-// TODO: clean up the job state machine, maybe formalize?
+// TODO: clean up the cmd state machine, maybe formalize?
 const (
 	STATE_NOT_STARTED int64 = iota
 	STATE_RUNNING
@@ -58,11 +53,11 @@ const (
 
 // non-exported struct
 type server struct {
-	jobsM            *sync.RWMutex          // Lock for allJobs
-	allJobs          map[uint64]*runningJob // Map of all previously requested jobs. map[jobID] -> job //TODO
-	runnableCommands Runnables              // Map of runnable commands for this agent: map[command name] -> command
-	IDm              *sync.Mutex            // Mutex for nextID //TODO: uuids!
-	nextID           uint64                 // the next available JobID //TODO: uuids!
+	cmdsM            *sync.RWMutex              // Lock for allCommands
+	allCommands      map[uint64]*runningCommand // Map of all previously requested cmds. map[cmdID] -> cmd //TODO
+	runnableCommands Runnables                  // Map of runnable commands for this agent: map[command name] -> command
+	IDm              *sync.Mutex                // Mutex for nextID //TODO: uuids!
+	nextID           uint64                     // the next available CommandID //TODO: uuids!
 
 	// server stuff
 	laddr      string       // host:port listen address
@@ -79,8 +74,8 @@ func NewServer(laddr string, configFile string) (Server, error) {
 		return nil, err
 	}
 	s := &server{
-		jobsM:            &sync.RWMutex{},
-		allJobs:          map[uint64]*runningJob{},
+		cmdsM:            &sync.RWMutex{},
+		allCommands:      map[uint64]*runningCommand{},
 		nextID:           0,
 		runnableCommands: cfg.Commands,
 		IDm:              &sync.Mutex{},
@@ -142,15 +137,15 @@ func (s *server) Stop() error {
 	return nil
 }
 
-// GetJobs list all jobs known by the server
-func (s *server) GetJobs(since *pb.StartTime, stream pb.RCEAgent_GetJobsServer) error {
-	log.Println("Getting all jobs.")
-	s.jobsM.RLock()
-	defer s.jobsM.RUnlock()
+// GetCommands list all cmds known by the server
+func (s *server) GetCommands(since *pb.StartTime, stream pb.RCEAgent_GetCommandsServer) error {
+	log.Println("Getting all cmds.")
+	s.cmdsM.RLock()
+	defer s.cmdsM.RUnlock()
 	return nil
-	for id, job := range s.allJobs {
-		if job.StartTime > since.StartTime {
-			j := &pb.JobID{JobID: id}
+	for id, cmd := range s.allCommands {
+		if cmd.StartTime > since.StartTime {
+			j := &pb.CommandID{CommandID: id}
 			if err := stream.Send(j); err != nil {
 				return err
 			}
@@ -159,123 +154,122 @@ func (s *server) GetJobs(since *pb.StartTime, stream pb.RCEAgent_GetJobsServer) 
 	return nil
 }
 
-// GetJobStatus returns the job status of the given job id.
-func (s *server) GetJobStatus(ctx context.Context, id *pb.JobID) (*pb.JobStatus, error) {
-	log.Printf("job=%d: Status request received.", id.JobID)
-	return s.getJobStatus(id.JobID)
+// GetCommandStatus returns the cmd status of the given cmd id.
+func (s *server) GetCommandStatus(ctx context.Context, id *pb.CommandID) (*pb.CommandStatus, error) {
+	log.Printf("cmd=%d: Status request received.", id.CommandID)
+	return s.getCommandStatus(id.CommandID)
 }
 
-// getJobStatus returns the job status of the given job id.
-func (s *server) getJobStatus(id uint64) (*pb.JobStatus, error) {
-	job, err := s.findJob(id)
+// getCommandStatus returns the cmd status of the given cmd id.
+func (s *server) getCommandStatus(id uint64) (*pb.CommandStatus, error) {
+	cmd, err := s.findCommand(id)
 	if err != nil {
 		return nil, err
 	}
 
-	return job.getStatus(), nil
+	return cmd.getStatus(), nil
 }
 
-// StopJob stops a given job by ID
+// StopCommand stops a given cmd by ID
 // TODO(cu): update this to use go-cmd/cmd's stop
-func (s *server) StopJob(ctx context.Context, id *pb.JobID) (*pb.JobStatus, error) {
-	log.Printf("job=%d: Stop request received.", id.JobID)
+func (s *server) StopCommand(ctx context.Context, id *pb.CommandID) (*pb.CommandStatus, error) {
+	log.Printf("cmd=%d: Stop request received.", id.CommandID)
 
 	//cmd.Stop()
 	//s :=s.Status()
 	// return s, nil
 
-	job, err := s.findJob(id.JobID)
+	cmd, err := s.findCommand(id.CommandID)
 	if err != nil {
 		return nil, err
 	}
 
-	if job.Status != STATE_RUNNING {
-		return nil, fmt.Errorf("job=%d: Job not running.", id.JobID)
+	if cmd.Status != STATE_RUNNING {
+		return nil, fmt.Errorf("cmd=%d: Command not running.", id.CommandID)
 	}
 
-	pid := int(job.getStatus().PID)
+	pid := int(cmd.getStatus().PID)
 
 	// TODO: how would we test this?
 	proc, err := os.FindProcess(pid)
 	if err != nil {
-		return nil, fmt.Errorf("job=%d: Process with pid %d not found: %v", id.JobID, pid, err)
+		return nil, fmt.Errorf("cmd=%d: Process with pid %d not found: %v", id.CommandID, pid, err)
 	}
 
 	// TODO: figure out the correct signal to send
 	err = proc.Signal(syscall.SIGTERM)
 	if err != nil {
-		return nil, fmt.Errorf("job=%d: Error killing pid %d: %v", id.JobID, pid, err)
+		return nil, fmt.Errorf("cmd=%d: Error killing pid %d: %v", id.CommandID, pid, err)
 	}
-	// TODO: need to wait until the job goroutine finishes updating status?
+	// TODO: need to wait until the cmd goroutine finishes updating status?
 
-	log.Printf("job=%d: Successfully killed pid %d", id.JobID, pid)
-	return job.getStatus(), nil
+	log.Printf("cmd=%d: Successfully killed pid %d", id.CommandID, pid)
+	return cmd.getStatus(), nil
 }
 
-// StartJob starts a job in a goroutine and immediately returns a jobstatus.
-// If a client wants updates on the job it must poll to determine
+// StartCommand starts a cmd in a goroutine and immediately returns a cmdstatus.
+// If a client wants updates on the cmd it must poll to determine
 // completion/output.
-func (s *server) StartJob(ctx context.Context, details *pb.JobRequest) (*pb.JobStatus, error) {
+func (s *server) StartCommand(ctx context.Context, details *pb.CommandRequest) (*pb.CommandStatus, error) {
 	cmdSpec, err := s.runnableCommands.FindByName(details.CommandName)
 	if err != nil {
-		return &pb.JobStatus{}, err
+		return &pb.CommandStatus{}, err
 	}
 
 	args := append(cmdSpec.Args(), details.Arguments...)
 
 	cmd := cmd.NewCmd(cmdSpec.Path(), args...)
 
-	job := &runningJob{
+	r := &runningCommand{
 		Cmd:         cmd,
-		JobID:       s.getNewJobID(),
-		JobName:     details.JobName,
+		CommandID:   s.getNewCommandID(),
 		Status:      STATE_NOT_STARTED,
 		CommandName: details.CommandName,
 		ExitCode:    -1,
 		Args:        args,
 	}
-	log.Printf("job=%d: New job received (name: %s, commandName: %s, path: %s, args: %v).", job.JobID,
-		job.JobName, job.CommandName, cmdSpec.Path(), job.Args)
+	log.Printf("cmd=%d: New cmd received (name: %s, path: %s, args: %v).",
+		r.CommandID, r.CommandName, cmdSpec.Path(), cmd.Args)
 
-	s.jobsM.Lock()
-	s.allJobs[job.JobID] = job
-	s.jobsM.Unlock()
+	s.cmdsM.Lock()
+	s.allCommands[r.CommandID] = r
+	s.cmdsM.Unlock()
 
-	job.runLock.Lock()
-	go job.do()
+	r.runLock.Lock()
+	go r.do()
 
 	// TODO: this should return an ID
-	return job.getStatus(), nil
+	return r.getStatus(), nil
 }
 
-// WaitOnJob blocks until the specified job returns
-func (s *server) WaitOnJob(ctx context.Context, id *pb.JobID) error {
-	job, err := s.findJob(id.JobID)
+// WaitOnCommand blocks until the specified cmd returns
+func (s *server) WaitOnCommand(ctx context.Context, id *pb.CommandID) error {
+	cmd, err := s.findCommand(id.CommandID)
 	if err != nil {
 		return err
 	}
 
-	job.wait()
+	cmd.wait()
 
 	return nil
 }
 
-// findJob takes a job id and returns the matching job
-func (s *server) findJob(id uint64) (*runningJob, error) {
-	s.jobsM.Lock()
-	defer s.jobsM.Unlock()
+// findCommand takes a cmd id and returns the matching cmd
+func (s *server) findCommand(id uint64) (*runningCommand, error) {
+	s.cmdsM.Lock()
+	defer s.cmdsM.Unlock()
 
-	job, ok := s.allJobs[id]
+	cmd, ok := s.allCommands[id]
 	if !ok {
-		return nil, fmt.Errorf("job=%d: Job not found.", id)
+		return nil, fmt.Errorf("cmd=%d: Command not found.", id)
 	}
 
-	return job, nil
+	return cmd, nil
 }
 
-// Get a new unique job id for each new job that gets requested.
+// Get a new unique cmd id for each new cmd that gets requested.
 // TODO: make this a uuid instead of an int
-func (s *server) getNewJobID() uint64 {
+func (s *server) getNewCommandID() uint64 {
 	s.IDm.Lock()
 	defer s.IDm.Unlock()
 	myID := s.nextID
@@ -283,40 +277,36 @@ func (s *server) getNewJobID() uint64 {
 	return myID
 }
 
-// runningJob maages the underlying command execution mechanism
-// TODO: rename to 'command', as 'Command' will become 'commandSpec'
-// TODO(cu): rethink these names, especially 'Job', 'JobName', 'CommandName', 'Args'
-type runningJob struct {
+// runningCommand maages the underlying command execution mechanism
+type runningCommand struct {
 	*cmd.Cmd            // go-cmd/cmd that manages the execution
 	runLock  sync.Mutex // Remains locked while command is running
 
 	sync.Mutex
-	JobID       uint64   // Unique ID of the job
-	JobName     string   // Unsure of original intent. I believe this should be the 'name' from the config
+	CommandID   uint64   // Unique ID of the cmd
+	CommandName string   // Unsure of original intent. I believe this should be the 'name' from the config
 	Status      int64    // Where the state machin lives, not currently used much TODO: rename to State
-	CommandName string   // Unsure of original intent. I believe this is the path?
 	StartTime   int64    // unixtime of the command's start
 	FinishTime  int64    // unixtime of the command's finish
 	ExitCode    int64    // exit code of command, -1 if failure or in-flight
 	Args        []string // args passed to exec'd command
 }
 
-// getStatus blends info in runningJob with that in the Cmd to produce a pb.JobStatus
+// getStatus blends info in runningCommand with that in the Cmd to produce a pb.CommandStatus
 // Much of this funcitonality will eventually be a part of go-cmd/cmd
-func (j *runningJob) getStatus() *pb.JobStatus {
+func (j *runningCommand) getStatus() *pb.CommandStatus {
 	j.Mutex.Lock()
 	defer j.Mutex.Unlock()
 
 	cmdStatus := j.Cmd.Status()
 
-	status := &pb.JobStatus{
-		JobID:       j.JobID,
-		JobName:     j.JobName,
+	status := &pb.CommandStatus{
+		CommandID:   j.CommandID,
 		CommandName: cmdStatus.Cmd,
 		PID:         int64(cmdStatus.PID),  // TODO: change cmd pkg type to int64?
 		StartTime:   j.StartTime,           // will be added to cmd pkg
 		FinishTime:  j.FinishTime,          // will be added to cmd pkg / TODO: rename to Complete
-		ExitCode:    int64(cmdStatus.Exit), // TODO: change pb.JobStatus type to int?
+		ExitCode:    int64(cmdStatus.Exit), // TODO: change pb.CommandStatus type to int?
 		Args:        j.Args,                // will be added to cmd pkg
 		Stdout:      cmdStatus.Stdout,
 	}
@@ -328,9 +318,9 @@ func (j *runningJob) getStatus() *pb.JobStatus {
 	return status
 }
 
-// do wraps the command execution logic and manages job metadata before/after
+// do wraps the command execution logic and manages cmd metadata before/after
 // it's running
-func (j *runningJob) do() {
+func (j *runningCommand) do() {
 	j.Mutex.Lock()
 	j.StartTime = time.Now().Unix()
 	j.Status = STATE_RUNNING
@@ -338,11 +328,11 @@ func (j *runningJob) do() {
 
 	status := <-j.Cmd.Start()
 
-	jobState := STATE_COMPLETED
+	cmdState := STATE_COMPLETED
 	j.runLock.Unlock()
 
 	if j.ExitCode != 0 {
-		jobState = STATE_FAILED
+		cmdState = STATE_FAILED
 	}
 
 	j.Mutex.Lock()
@@ -350,11 +340,11 @@ func (j *runningJob) do() {
 
 	j.FinishTime = time.Now().Unix()
 	j.ExitCode = int64(status.Exit)
-	j.Status = jobState
+	j.Status = cmdState
 }
 
-// wait blocks until the job returns
-func (j *runningJob) wait() {
+// wait blocks until the cmd returns
+func (j *runningCommand) wait() {
 	j.runLock.Lock()
 	j.runLock.Unlock()
 }

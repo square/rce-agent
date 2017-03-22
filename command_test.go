@@ -7,9 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/go-test/deep"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var err error
