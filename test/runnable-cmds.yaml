@@ -1,3 +1,7 @@
 commands:
-  exitZero: exit 0
-  exitOne: exit 1
+  - name: exit.zero
+    exec: [/usr/bin/true]
+  - name: exit.one
+    exec:
+      - /bin/false
+      - some-arg

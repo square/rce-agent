@@ -1,0 +1,5 @@
+commands:
+  - name: exit.zero
+    exec: [/usr/bin/true]
+  - name: echo
+    exec: [/bin/echo]
