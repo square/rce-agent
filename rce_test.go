@@ -8,18 +8,21 @@ import (
 
 	"github.com/go-test/deep"
 	"github.com/square/rce-agent"
+	"github.com/square/rce-agent/cmd"
 	"github.com/square/rce-agent/pb"
 )
 
-const PORT = "5501"
+const (
+	HOST               = "127.0.0.1"
+	PORT               = "5501"
+	SERVER_TEST_CONFIG = "test/server-test-commands.yaml"
+)
 
-const SERVER_TEST_CONFIG = "test/server-test-commands.yaml"
+var whitelist, _ = cmd.LoadCommands(SERVER_TEST_CONFIG)
+var LADDR = HOST + ":" + PORT
 
 func TestExitZero(t *testing.T) {
-	s, err := rce.NewServer(PORT, SERVER_TEST_CONFIG)
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := rce.NewServer(LADDR, nil, whitelist)
 
 	c := &pb.Command{
 		Name:      "exit.zero",
@@ -50,10 +53,7 @@ func TestExitZero(t *testing.T) {
 }
 
 func TestArgs(t *testing.T) {
-	s, err := rce.NewServer(PORT, SERVER_TEST_CONFIG)
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := rce.NewServer(LADDR, nil, whitelist)
 
 	message := "some.message"
 
@@ -111,5 +111,53 @@ func TestArgs(t *testing.T) {
 	if diff := deep.Equal(gotStatus, expectStatus); diff != nil {
 		t.Logf("%+v", gotStatus)
 		t.Error(diff)
+	}
+}
+
+func TestTLSServer(t *testing.T) {
+	tlsFiles := rce.TLSFiles{
+		RootCert:   "./test/tls/test_root_ca.crt",
+		ClientCert: "./test/tls/test_server.crt",
+		ClientKey:  "./test/tls/test_server.key",
+	}
+	tlsConfig, err := tlsFiles.TLSConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := rce.NewServer(LADDR, tlsConfig, whitelist)
+
+	err = s.StartServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.StopServer()
+
+	tlsFiles = rce.TLSFiles{
+		RootCert:   "./test/tls/test_root_ca.crt",
+		ClientCert: "./test/tls/test_client.crt",
+		ClientKey:  "./test/tls/test_client.key",
+	}
+	tlsConfig, err = tlsFiles.TLSConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := rce.NewClient(tlsConfig)
+
+	err = c.Open(HOST, PORT)
+	if err != nil {
+		t.Error(err)
+	}
+
+	id, err := c.Start("nonexistent-cmd", []string{})
+	if err == nil {
+		t.Error("got nil error, expected an error")
+	}
+	if id != "" {
+		t.Errorf("got id '%s', expected empty string", id)
+	}
+
+	err = c.Close()
+	if err != nil {
+		t.Error(err)
 	}
 }
