@@ -1,6 +1,6 @@
 # RCE Agent
 
-[![GoDoc](https://godoc.org/github.com/square/rce-agent?status.svg)](https://godoc.org/github.com/square/rce-agent)
+[![Go Report Card](https://goreportcard.com/badge/github.com/square/rce-agent)](https://goreportcard.com/report/github.com/square/rce-agent) [![GoDoc](https://godoc.org/github.com/square/rce-agent?status.svg)](https://godoc.org/github.com/square/rce-agent)
 
 gRPC-based Remote Command Execution Agent
 
