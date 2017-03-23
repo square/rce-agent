@@ -3,6 +3,7 @@
 package rce
 
 import (
+	"crypto/tls"
 	"errors"
 	"log"
 	"net"
@@ -11,11 +12,8 @@ import (
 	pb "github.com/square/rce-agent/pb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
-
-func init() {
-	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile | log.LUTC)
-}
 
 var (
 	// ErrNotFound is returned for calls on nonexistent commands. The command
@@ -37,33 +35,38 @@ type Server interface {
 // Internal implementation of pb.RCEAgentServer interface.
 type server struct {
 	laddr      string       // host:port listen address
-	repo       cmd.Repo     // running commands
+	tlsConfig  *tls.Config  // if secure
 	whitelist  cmd.Runnable // commands from config file
+	repo       cmd.Repo     // running commands
 	grpcServer *grpc.Server // gRPC server instance of this agent
 }
 
-// NewServer makes a new Server.
-func NewServer(laddr string, configFile string) (Server, error) {
-	whitelist, err := cmd.LoadCommands(configFile)
-	if err != nil {
-		return nil, err
-	}
+// NewServer makes a new Server that listens on laddr and runs the whitelist
+// of commands. If tlsConfig is nil, the sever is insecure.
+func NewServer(laddr string, tlsConfig *tls.Config, whitelist cmd.Runnable) Server {
+	// Set log flags here so other pkgs can't override in their init().
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile | log.LUTC)
 
 	s := &server{
 		laddr:     laddr,
+		tlsConfig: tlsConfig,
 		repo:      cmd.NewRepo(),
 		whitelist: whitelist,
 	}
 
-	// TODO: use tls
-
 	// Create a gRPC server and register this agent a implementing the
 	// RCEAgentServer interface and protocol
-	grpcServer := grpc.NewServer()
+	var grpcServer *grpc.Server
+	if tlsConfig != nil {
+		opt := grpc.Creds(credentials.NewTLS(tlsConfig))
+		grpcServer = grpc.NewServer(opt)
+	} else {
+		grpcServer = grpc.NewServer()
+	}
 	pb.RegisterRCEAgentServer(grpcServer, s)
 	s.grpcServer = grpcServer
 
-	return s, nil
+	return s
 }
 
 func (s *server) StartServer() error {
@@ -72,11 +75,17 @@ func (s *server) StartServer() error {
 		return err
 	}
 	go s.grpcServer.Serve(lis)
+	if s.tlsConfig != nil {
+		log.Printf("secure server listening on %s", s.laddr)
+	} else {
+		log.Printf("insecure server listening on %s", s.laddr)
+	}
 	return nil
 }
 
 func (s *server) StopServer() error {
 	s.grpcServer.GracefulStop()
+	log.Printf("server stopped on %s", s.laddr)
 	return nil
 }
 
@@ -89,12 +98,14 @@ func (s *server) Start(ctx context.Context, c *pb.Command) (*pb.ID, error) {
 
 	spec, err := s.whitelist.FindByName(c.Name)
 	if err != nil {
+		log.Printf("unknown command: %s", c.Name)
 		return id, err
 	}
 
 	// Append cmd request args to cmd spec args
 	cmd := cmd.NewCmd(spec, append(spec.Args(), c.Arguments...))
 	if err := s.repo.Add(cmd); err != nil {
+		log.Printf("duplicate command: %+v", cmd)
 		return id, err
 	}
 
