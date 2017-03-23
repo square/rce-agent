@@ -7,10 +7,19 @@ import (
 	"sync"
 )
 
+// Repo is a thread-safe collection of Cmd used by an rce.Server.
 type Repo interface {
+	// Add new command to repo, identified by Cmd.Id.
 	Add(*Cmd) error
+
+	// Remove command from repo.
 	Remove(id string) error
+
+	// Return command from repo, or nil if doesn't exist.
 	Get(id string) *Cmd
+
+	// Return list of all command IDs in repos. The list is a copy and can change
+	// between calls.
 	All() []string
 }
 
@@ -19,6 +28,7 @@ type repo struct {
 	all map[string]*Cmd // keyed on id
 }
 
+// NewRepo makes a new empty Repo.
 func NewRepo() Repo {
 	return &repo{
 		Mutex: &sync.Mutex{},

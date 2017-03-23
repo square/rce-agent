@@ -18,12 +18,19 @@ func init() {
 }
 
 var (
+	// ErrNotFound is returned for calls on nonexistent commands. The command
+	// either never existed, or was reaped by the client calling Wait or Stop.
 	ErrNotFound = errors.New("not found")
 )
 
+// A Server executes a whitelist of commands when called by clients.
 type Server interface {
+	// Start the gRPC server, non-blocking.
 	StartServer() error
+
+	// Stop the gRPC server gracefully.
 	StopServer() error
+
 	pb.RCEAgentServer
 }
 
@@ -35,10 +42,8 @@ type server struct {
 	grpcServer *grpc.Server // gRPC server instance of this agent
 }
 
-// NewServer creates a new gRPC server listening on the given host:port (laddr)
-// and using the given configFile to load allowed commands. The server is not
-// started.
-func NewServer(laddr string, configFile string) (*server, error) {
+// NewServer makes a new Server.
+func NewServer(laddr string, configFile string) (Server, error) {
 	whitelist, err := cmd.LoadCommands(configFile)
 	if err != nil {
 		return nil, err
@@ -61,9 +66,6 @@ func NewServer(laddr string, configFile string) (*server, error) {
 	return s, nil
 }
 
-// Start starts the gRPC server. This function is non blocking and returns
-// an error if there is one starting the listener. The caller should call Stop
-// to properly stop the server.
 func (s *server) StartServer() error {
 	lis, err := net.Listen("tcp", s.laddr)
 	if err != nil {
@@ -73,7 +75,6 @@ func (s *server) StartServer() error {
 	return nil
 }
 
-// StopServer stops the the gRPC server.
 func (s *server) StopServer() error {
 	s.grpcServer.GracefulStop()
 	return nil

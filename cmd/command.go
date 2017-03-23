@@ -1,5 +1,6 @@
 // Copyright 2017 Square, Inc.
 
+// Package cmd provides command file specs and structures used by an rce.Server.
 package cmd
 
 import (
@@ -26,9 +27,10 @@ type Cmd struct {
 	Id   string
 	Name string
 	Cmd  *gocmd.Cmd
-	Args []string // args passed to exec'd command
+	Args []string
 }
 
+// NewCmd makes a new Cmd with the given Spec and args, and assigns it an ID.
 func NewCmd(s Spec, args []string) *Cmd {
 	cmd := gocmd.NewCmd(s.Path(), args...)
 	return &Cmd{
@@ -48,7 +50,8 @@ func id() string {
 // Spec
 // //////////////////////////////////////////////////////////////////////////
 
-// Spec represents a whitelist command that the RCE agent can run.
+// Spec represents one command in a YAML config file. See LoadCommands for the
+// file structure.
 type Spec struct {
 	// Short, unique name of the command. Example: "lxc-ls". This is only an alias.
 	Name string `yaml:"name"`
@@ -81,19 +84,23 @@ func (c Spec) Args() []string {
 
 type Runnable []Spec
 
-// A specFile represents the YAML structure of whitelist commands. Example:
-// ---
-// commands:
-//   - name: exit.zero
-//     exec: [/usr/bin/true]
-//	 - name: exit.one
-//	   exec:
-//       - /bin/false
-//       - some-arg
 type specFile struct {
 	Commands Runnable `yaml:"commands"`
 }
 
+// LoadCommands loads all command Spec from a YAML config file. The file structure is:
+//
+//   ---
+//   commands:
+//     - name: exit.zero
+//       exec: [/usr/bin/true]
+//	   - name: exit.one
+//	     exec:
+//         - /bin/false
+//         - some-arg
+//
+// Name must be unique. The first exec value must be an absolute command path.
+// Additional exec values are optional and always included in the order listed.
 func LoadCommands(file string) (Runnable, error) {
 	bytes, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -116,7 +123,7 @@ func LoadCommands(file string) (Runnable, error) {
 	return s.Commands, nil
 }
 
-// Validate runs validations on all Specs in the collection
+// Validate validates a list of Spec and returns an error if any invalid.
 func (r Runnable) Validate() error {
 	var err error
 
@@ -135,8 +142,8 @@ func (r Runnable) Validate() error {
 	return nil
 }
 
-// ValidateNoDuplicates returns an ErrDuplicateName if the list of runnables
-// contains two Specs with the same name
+// ValidateNoDuplicates returns an ErrDuplicateName if the list of Spec contains
+// duplicate names.
 func (r Runnable) ValidateNoDuplicates() error {
 	names := make(map[string]bool)
 
@@ -151,7 +158,7 @@ func (r Runnable) ValidateNoDuplicates() error {
 	return nil
 }
 
-// FindByName returns a Spec matching the given name
+// FindByName returns a Spec matching the given name.
 func (r Runnable) FindByName(name string) (Spec, error) {
 	for _, c := range r {
 		if name == c.Name {

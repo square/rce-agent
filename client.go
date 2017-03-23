@@ -1,5 +1,10 @@
 // Copyright 2017 Square, Inc.
 
+// Package rce provides a gRPC-based Remote Code Execution client and server.
+// The server (or "agent") runs on a remote host and executes a whitelist of
+// shell commands specified in a config file. The client calls the server to
+// execute whitelist commands. Commands from different clients run concurrently;
+// there are no safeguards against conflicting or incompatible commands.
 package rce
 
 import (
@@ -13,21 +18,36 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// A Client is used to send commands to a remote agent.
+// A Client calls a remote agent (server) to execute commands.
 type Client interface {
-	// Open the connection to the agent
+	// Connect to a remote agent.
 	Open(host, port string) error
 
-	// Closes the connection to the agent.
+	// Close connection to a remote agent.
 	Close() error
 
-	// Returns the agent hostname and port.
+	// Return hostname and port of remote agent, if connected.
 	AgentAddr() (string, string)
 
+	// Start a command on the remote agent. Must be connected first by calling
+	// Connect. This call is non-blocking. It returns the ID of the command or
+	// an error.
 	Start(cmdName string, args []string) (id string, err error)
+
+	// Wait for a command on the remote agent. This call blocks until the command
+	// completes. It returns the final statue of the command or an error.
 	Wait(id string) (*pb.Status, error)
+
+	// Get the status of a running command. This is safe to call by multiple
+	// goroutines. ErrNotFound is returned if Wait or Stop has already been
+	// called.
 	GetStatus(id string) (*pb.Status, error)
+
+	// Stop a running command. ErrNotFound is returne if Wait or Stop has already
+	// been called.
 	Stop(id string) (*pb.Status, error)
+
+	// Return a list of all running command IDs.
 	Running() ([]string, error)
 }
 
@@ -39,12 +59,11 @@ type client struct {
 	tlsConfig *tls.Config
 }
 
-// Create a new gRPC client
+// NewClient makes a new Client.
 func NewClient(tlsConfig *tls.Config) Client {
 	return &client{tlsConfig: tlsConfig}
 }
 
-// Open the connection to the RCE Agent
 func (c *client) Open(host, port string) error {
 	var opt grpc.DialOption
 	if c.tlsConfig == nil {
