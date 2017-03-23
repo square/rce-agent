@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	gocmd "github.com/go-cmd/cmd"
 	"github.com/nu7hatch/gouuid"
@@ -24,7 +23,6 @@ var (
 
 // Cmd represents a running command.
 type Cmd struct {
-	*sync.Mutex
 	Id   string
 	Name string
 	Cmd  *gocmd.Cmd
@@ -34,11 +32,10 @@ type Cmd struct {
 func NewCmd(s Spec, args []string) *Cmd {
 	cmd := gocmd.NewCmd(s.Path(), args...)
 	return &Cmd{
-		Mutex: &sync.Mutex{},
-		Id:    id(),
-		Name:  s.Name,
-		Cmd:   cmd,
-		Args:  args,
+		Id:   id(),
+		Name: s.Name,
+		Cmd:  cmd,
+		Args: args,
 	}
 }
 
