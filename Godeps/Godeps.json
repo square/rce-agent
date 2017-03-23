@@ -5,7 +5,7 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/go-cmd/cmd",
-			"Rev": "5abb8e8f950b6f71f389673b1f6b6276fd3c1417"
+			"Rev": "047fde6710aaaa00c2ff9d29551e7e8925287f3b"
 		},
 		{
 			"ImportPath": "github.com/go-test/deep",
@@ -71,11 +71,6 @@
 		},
 		{
 			"ImportPath": "google.golang.org/grpc/credentials",
-			"Comment": "v1.0.5-54-g20633fa",
-			"Rev": "20633fa172ac711ac6a77fd573ed13f23ec56dcb"
-		},
-		{
-			"ImportPath": "google.golang.org/grpc/grpclog",
 			"Comment": "v1.0.5-54-g20633fa",
 			"Rev": "20633fa172ac711ac6a77fd573ed13f23ec56dcb"
 		},
