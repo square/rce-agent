@@ -72,7 +72,17 @@ func (c *client) Open(host, port string) error {
 		creds := credentials.NewTLS(c.tlsConfig)
 		opt = grpc.WithTransportCredentials(creds)
 	}
-	conn, err := grpc.Dial(host+":"+port, opt)
+	conn, err := grpc.Dial(
+		host+":"+port,
+		opt, // insecure or with TLS
+
+		// Block = actually connect. Timeout = max time to retry on failure
+		// (no option to set retry count). Backoff delay = time between retries,
+		// up to Timeout.
+		grpc.WithBlock(),
+		grpc.WithTimeout(time.Duration(10)*time.Second),
+		grpc.WithBackoffMaxDelay(time.Duration(2)*time.Second),
+	)
 	if err != nil {
 		return err
 	}

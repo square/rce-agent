@@ -4,7 +4,6 @@ package rce
 
 import (
 	"crypto/tls"
-	"errors"
 	"log"
 	"net"
 
@@ -12,13 +11,8 @@ import (
 	pb "github.com/square/rce-agent/pb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-)
-
-var (
-	// ErrNotFound is returned for calls on nonexistent commands. The command
-	// either never existed, or was reaped by the client calling Wait or Stop.
-	ErrNotFound = errors.New("not found")
 )
 
 // A Server executes a whitelist of commands when called by clients.
@@ -99,14 +93,15 @@ func (s *server) Start(ctx context.Context, c *pb.Command) (*pb.ID, error) {
 	spec, err := s.whitelist.FindByName(c.Name)
 	if err != nil {
 		log.Printf("unknown command: %s", c.Name)
-		return id, err
+		return id, grpc.Errorf(codes.InvalidArgument, "unknown command: %s", c.Name)
 	}
 
 	// Append cmd request args to cmd spec args
 	cmd := cmd.NewCmd(spec, append(spec.Args(), c.Arguments...))
 	if err := s.repo.Add(cmd); err != nil {
+		// This should never happen
 		log.Printf("duplicate command: %+v", cmd)
-		return id, err
+		return id, grpc.Errorf(codes.AlreadyExists, "duplicate command: %s", cmd.Id)
 	}
 
 	log.Printf("cmd=%s: start: %s path: %s args: %v", cmd.Id, c.Name, spec.Path(), cmd.Args)
@@ -121,7 +116,7 @@ func (s *server) Wait(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 
 	cmd := s.repo.Get(id.ID)
 	if cmd == nil {
-		return nil, ErrNotFound
+		return nil, notFound(id)
 	}
 
 	<-cmd.Cmd.Start()
@@ -138,7 +133,7 @@ func (s *server) GetStatus(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 
 	cmd := s.repo.Get(id.ID)
 	if cmd == nil {
-		return nil, ErrNotFound
+		return nil, notFound(id)
 	}
 
 	// Get go-cm/cmd.Status struct
@@ -179,7 +174,7 @@ func (s *server) Stop(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 
 	cmd := s.repo.Get(id.ID)
 	if cmd == nil {
-		return nil, ErrNotFound
+		return nil, notFound(id)
 	}
 
 	cmd.Cmd.Stop()
@@ -199,4 +194,8 @@ func (s *server) Running(empty *pb.Empty, stream pb.RCEAgent_RunningServer) erro
 		}
 	}
 	return nil
+}
+
+func notFound(id *pb.ID) error {
+	return grpc.Errorf(codes.NotFound, "command ID %s not found", id.ID)
 }

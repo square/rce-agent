@@ -29,8 +29,10 @@ func (f TLSFiles) TLSConfig() (*tls.Config, error) {
 	caCertPool.AppendCertsFromPEM(caCert)
 
 	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
 		RootCAs:      caCertPool,
+		ClientCAs:    caCertPool,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		Certificates: []tls.Certificate{cert},
 	}
 	tlsConfig.BuildNameToCertificate()
 

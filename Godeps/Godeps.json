@@ -9,7 +9,7 @@
 		},
 		{
 			"ImportPath": "github.com/go-test/deep",
-			"Rev": "64dede292689f3a95b6fa7fb6f3efec6c2fecf06"
+			"Rev": "79b3a1f9fcebb32c50364cfc75c3b5324814de16"
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/proto",

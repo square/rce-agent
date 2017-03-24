@@ -10,6 +10,8 @@ import (
 	"github.com/square/rce-agent"
 	"github.com/square/rce-agent/cmd"
 	"github.com/square/rce-agent/pb"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -145,12 +147,13 @@ func TestTLSServer(t *testing.T) {
 
 	err = c.Open(HOST, PORT)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
-	id, err := c.Start("nonexistent-cmd", []string{})
-	if err == nil {
-		t.Error("got nil error, expected an error")
+	id, gotErr := c.Start("nonexistent-cmd", []string{})
+	expectErr := grpc.Errorf(codes.InvalidArgument, "unknown command: nonexistent-cmd")
+	if diff := deep.Equal(gotErr, expectErr); diff != nil {
+		t.Error(diff)
 	}
 	if id != "" {
 		t.Errorf("got id '%s', expected empty string", id)
