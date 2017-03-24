@@ -69,6 +69,7 @@ func (c *client) Open(host, port string) error {
 	if c.tlsConfig == nil {
 		opt = grpc.WithInsecure()
 	} else {
+		c.tlsConfig.ServerName = host
 		creds := credentials.NewTLS(c.tlsConfig)
 		opt = grpc.WithTransportCredentials(creds)
 	}
