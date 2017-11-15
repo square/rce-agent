@@ -141,11 +141,17 @@ func (s *server) GetStatus(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 	// Get go-cm/cmd.Status struct
 	cmdStatus := cmd.Cmd.Status()
 
+	var errMsg string
+	if cmdStatus.Error != nil {
+		errMsg = cmdStatus.Error.Error()
+	}
+
 	// Make a pb.Status struct by adding and mapping some fields
 	pbStatus := &pb.Status{
 		ID:        cmd.Id,                // add
 		Name:      cmd.Name,              // add
 		ExitCode:  int64(cmdStatus.Exit), // map
+		Error:     errMsg,                // map
 		PID:       int64(cmdStatus.PID),  // map
 		StartTime: cmdStatus.StartTs,     // map
 		StopTime:  cmdStatus.StopTs,      // map
