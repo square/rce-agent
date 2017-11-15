@@ -57,13 +57,15 @@ func NewServer(laddr string, tlsConfig *tls.Config, whitelist cmd.Runnable) Serv
 	} else {
 		grpcServer = grpc.NewServer()
 	}
-	pb.RegisterRCEAgentServer(grpcServer, s)
 	s.grpcServer = grpcServer
 
 	return s
 }
 
 func (s *server) StartServer() error {
+	// Register the RCEAgent service with the gRPC server.
+	pb.RegisterRCEAgentServer(s.grpcServer, s)
+
 	lis, err := net.Listen("tcp", s.laddr)
 	if err != nil {
 		return err
