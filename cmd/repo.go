@@ -67,6 +67,7 @@ func (r *repo) All() []string {
 	i := 0
 	for id := range r.all {
 		all[i] = id
+		i++
 	}
 	return all
 }
