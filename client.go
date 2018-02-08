@@ -45,7 +45,7 @@ type Client interface {
 
 	// Stop a running command. ErrNotFound is returne if Wait or Stop has already
 	// been called.
-	Stop(id string) (*pb.Status, error)
+	Stop(id string) (*pb.Empty, error)
 
 	// Return a list of all running command IDs.
 	Running() ([]string, error)
@@ -132,7 +132,7 @@ func (c *client) GetStatus(id string) (*pb.Status, error) {
 	return c.agent.GetStatus(ctx, &pb.ID{ID: id})
 }
 
-func (c *client) Stop(id string) (*pb.Status, error) {
+func (c *client) Stop(id string) (*pb.Empty, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	return c.agent.Stop(ctx, &pb.ID{ID: id})
