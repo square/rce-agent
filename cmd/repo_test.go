@@ -25,20 +25,41 @@ func TestOneId(t *testing.T) {
 func TestMultipleIds(t *testing.T) {
 	repo := cmd.NewRepo()
 
-	command := cmd.Cmd{Id: "first ID"}
-	repo.Add(&command)
-	command = cmd.Cmd{Id: "second ID"}
-	repo.Add(&command)
-	all_ids := repo.All()
+	expectedIds := []string{"first ID", "second ID", "third ID", "fourth ID"}
 
-	if len(all_ids) != 2 {
-		t.Errorf("Expected 2 IDs, got %d", len(all_ids))
+	for _, id := range expectedIds {
+		command := cmd.Cmd{Id: id}
+		repo.Add(&command)
 	}
 
-	expected := []string{"first ID", "second ID"}
-	for i := range all_ids {
-		if all_ids[i] != expected[i] {
-			t.Errorf("Expected ID %d to be '%s', but was '%s'", i, expected[i], all_ids[i])
+	allIds := repo.All()
+
+	if len(allIds) != len(expectedIds) {
+		t.Errorf("Expected %d IDs, got %d", len(expectedIds), len(allIds))
+	}
+
+	for _, foundId := range allIds {
+		seen := false
+		for _, expectedId := range expectedIds {
+			if expectedId == foundId {
+				seen = true
+			}
+		}
+		if !seen {
+			t.Errorf("Found unexpected ID: '%s'", foundId)
 		}
 	}
+
+	for _, expectedId := range expectedIds {
+		seen := false
+		for _, foundId := range allIds {
+			if expectedId == foundId {
+				seen = true
+			}
+		}
+		if !seen {
+			t.Errorf("Expected ID not found: '%s'", expectedId)
+		}
+	}
+
 }
