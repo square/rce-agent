@@ -17,7 +17,7 @@ service RCEAgent {
   rpc GetStatus(ID) returns (Status) {}
 
   // Stop then reap a command by sending it a SIGTERM signal. 
-  rpc Stop(ID) returns (Status) {}
+  rpc Stop(ID) returns (Empty) {}
 
   // Return a list of all running (not reaped) commands by ID.
   rpc Running(Empty) returns (stream ID) {}

@@ -120,12 +120,11 @@ func (s *server) Wait(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 	if cmd == nil {
 		return nil, notFound(id)
 	}
+	// Reap the command
+	defer s.repo.Remove(id.ID)
 
 	<-cmd.Cmd.Start()
 	finalStatus, err := s.GetStatus(ctx, id)
-
-	// Reap the command
-	s.repo.Remove(id.ID)
 
 	return finalStatus, err
 }
@@ -177,7 +176,7 @@ func (s *server) GetStatus(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 	return pbStatus, nil
 }
 
-func (s *server) Stop(ctx context.Context, id *pb.ID) (*pb.Status, error) {
+func (s *server) Stop(ctx context.Context, id *pb.ID) (*pb.Empty, error) {
 	log.Printf("cmd=%s: stop", id.ID)
 
 	cmd := s.repo.Get(id.ID)
@@ -186,12 +185,8 @@ func (s *server) Stop(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 	}
 
 	cmd.Cmd.Stop()
-	finalStatus, err := s.GetStatus(context.TODO(), id)
 
-	// Reap the command
-	s.repo.Remove(id.ID)
-
-	return finalStatus, err
+	return &pb.Empty{}, nil
 }
 
 func (s *server) Running(empty *pb.Empty, stream pb.RCEAgent_RunningServer) error {
