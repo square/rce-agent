@@ -123,21 +123,55 @@ func (s *server) Wait(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 	// Reap the command
 	defer s.repo.Remove(id.ID)
 
-	<-cmd.Cmd.Start()
-	finalStatus, err := s.GetStatus(ctx, id)
+	// Wait for command or ctx to finish
+	select {
+	case <-cmd.Cmd.Done():
+	case <-ctx.Done():
+	}
 
-	return finalStatus, err
+	// Get final status of command and convert to pb.Status. If ctx was canceled
+	// and command still running, its status will indicate this and ctx.Err()
+	// below will return an error, else it will return nil.
+	return mapStatus(cmd), ctx.Err()
 }
 
 func (s *server) GetStatus(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 	log.Printf("cmd=%s: status", id.ID)
+	cmd := s.repo.Get(id.ID)
+	if cmd == nil {
+		return nil, notFound(id)
+	}
+	return mapStatus(cmd), nil
+}
+
+func (s *server) Stop(ctx context.Context, id *pb.ID) (*pb.Empty, error) {
+	log.Printf("cmd=%s: stop", id.ID)
 
 	cmd := s.repo.Get(id.ID)
 	if cmd == nil {
 		return nil, notFound(id)
 	}
 
-	// Get go-cm/cmd.Status struct
+	cmd.Cmd.Stop()
+
+	return &pb.Empty{}, nil
+}
+
+func (s *server) Running(empty *pb.Empty, stream pb.RCEAgent_RunningServer) error {
+	log.Println("list running")
+	for _, id := range s.repo.All() {
+		if err := stream.Send(&pb.ID{ID: id}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func notFound(id *pb.ID) error {
+	return grpc.Errorf(codes.NotFound, "command ID %s not found", id.ID)
+}
+
+func mapStatus(cmd *cmd.Cmd) *pb.Status {
 	cmdStatus := cmd.Cmd.Status()
 
 	var errMsg string
@@ -173,32 +207,5 @@ func (s *server) GetStatus(ctx context.Context, id *pb.ID) (*pb.Status, error) {
 		pbStatus.State = pb.STATE_UNKNOWN
 	}
 
-	return pbStatus, nil
-}
-
-func (s *server) Stop(ctx context.Context, id *pb.ID) (*pb.Empty, error) {
-	log.Printf("cmd=%s: stop", id.ID)
-
-	cmd := s.repo.Get(id.ID)
-	if cmd == nil {
-		return nil, notFound(id)
-	}
-
-	cmd.Cmd.Stop()
-
-	return &pb.Empty{}, nil
-}
-
-func (s *server) Running(empty *pb.Empty, stream pb.RCEAgent_RunningServer) error {
-	log.Println("list running")
-	for _, id := range s.repo.All() {
-		if err := stream.Send(&pb.ID{ID: id}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func notFound(id *pb.ID) error {
-	return grpc.Errorf(codes.NotFound, "command ID %s not found", id.ID)
+	return pbStatus
 }
