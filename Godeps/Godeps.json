@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/square/rce-agent",
 	"GoVersion": "go1.7",
-	"GodepVersion": "v77",
+	"GodepVersion": "v79",
 	"Deps": [
 		{
 			"ImportPath": "github.com/go-cmd/cmd",
@@ -17,31 +17,31 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
-			"Rev": "b03f0d9a164ac99fff690e1e0bb0af36f760322b"
+			"Rev": "81d44fd177a98d09fe3bc40a5a78d495d3f042ea"
+		},
+		{
+			"ImportPath": "golang.org/x/net/http/httpguts",
+			"Rev": "81d44fd177a98d09fe3bc40a5a78d495d3f042ea"
 		},
 		{
 			"ImportPath": "golang.org/x/net/http2",
-			"Rev": "b03f0d9a164ac99fff690e1e0bb0af36f760322b"
+			"Rev": "81d44fd177a98d09fe3bc40a5a78d495d3f042ea"
 		},
 		{
 			"ImportPath": "golang.org/x/net/http2/hpack",
-			"Rev": "b03f0d9a164ac99fff690e1e0bb0af36f760322b"
+			"Rev": "81d44fd177a98d09fe3bc40a5a78d495d3f042ea"
 		},
 		{
 			"ImportPath": "golang.org/x/net/idna",
-			"Rev": "b03f0d9a164ac99fff690e1e0bb0af36f760322b"
+			"Rev": "81d44fd177a98d09fe3bc40a5a78d495d3f042ea"
 		},
 		{
 			"ImportPath": "golang.org/x/net/internal/timeseries",
-			"Rev": "b03f0d9a164ac99fff690e1e0bb0af36f760322b"
-		},
-		{
-			"ImportPath": "golang.org/x/net/lex/httplex",
-			"Rev": "b03f0d9a164ac99fff690e1e0bb0af36f760322b"
+			"Rev": "81d44fd177a98d09fe3bc40a5a78d495d3f042ea"
 		},
 		{
 			"ImportPath": "golang.org/x/net/trace",
-			"Rev": "b03f0d9a164ac99fff690e1e0bb0af36f760322b"
+			"Rev": "81d44fd177a98d09fe3bc40a5a78d495d3f042ea"
 		},
 		{
 			"ImportPath": "golang.org/x/text/secure/bidirule",
