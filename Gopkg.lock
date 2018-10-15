@@ -2,41 +2,52 @@
 
 
 [[projects]]
+  digest = "1:99309afc4d7533af6fd043a18570d6c54149a7f80ba727203a9965be7e30051e"
   name = "github.com/go-cmd/cmd"
   packages = ["."]
+  pruneopts = "UT"
   revision = "bcc8acb0e40f18e9f14dd57d35bc76e06541fb12"
   version = "v1.0.2"
 
 [[projects]]
+  digest = "1:4d807b27ca42dec8e0ab8425cab2c4c575653dc2a5754c15dfbf15ef2be9cffb"
   name = "github.com/go-test/deep"
   packages = ["."]
+  pruneopts = "UT"
   revision = "79b3a1f9fcebb32c50364cfc75c3b5324814de16"
 
 [[projects]]
+  digest = "1:e9684f376cdd9a3b44b0a0cb8c626ce5e907a5541fad0c50e1e6d5f8999609ae"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
+  pruneopts = "UT"
   revision = "69b215d01a5606c843240eab4937eab3acee6530"
 
 [[projects]]
   branch = "master"
+  digest = "1:0e1e5f960c58fdc677212fcc70e55042a0084d367623e51afbdb568963832f5d"
   name = "github.com/nu7hatch/gouuid"
   packages = ["."]
+  pruneopts = "UT"
   revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 
 [[projects]]
+  digest = "1:523ecaefc9f3a6f0d84baaeee490ec8e804c9f9e2c88433288f16502969ef50a"
   name = "golang.org/x/net"
   packages = [
     "context",
+    "http/httpguts",
     "http2",
     "http2/hpack",
     "idna",
     "internal/timeseries",
-    "lex/httplex",
-    "trace"
+    "trace",
   ]
-  revision = "b03f0d9a164ac99fff690e1e0bb0af36f760322b"
+  pruneopts = "UT"
+  revision = "81d44fd177a98d09fe3bc40a5a78d495d3f042ea"
 
 [[projects]]
+  digest = "1:e32be40f3d44bb1009e738c4f2ede89dcdafd269d970aaf350a8a91bf8794c2b"
   name = "golang.org/x/text"
   packages = [
     "internal/gen",
@@ -47,11 +58,13 @@
     "unicode/bidi",
     "unicode/cldr",
     "unicode/norm",
-    "unicode/rangetable"
+    "unicode/rangetable",
   ]
+  pruneopts = "UT"
   revision = "44f4f658a783b0cee41fe0a23b8fc91d9c120558"
 
 [[projects]]
+  digest = "1:9ef2fe05c22f18f68cf1cfa022ed252ece16325c19bc5d3be456bb3bde2b7741"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -64,18 +77,31 @@
     "peer",
     "stats",
     "tap",
-    "transport"
+    "transport",
   ]
+  pruneopts = "UT"
   revision = "20633fa172ac711ac6a77fd573ed13f23ec56dcb"
 
 [[projects]]
+  digest = "1:cacb98d52c60c337c2ce95a7af83ba0313a93ce5e73fa9e99a96aff70776b9d3"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
+  pruneopts = "UT"
   revision = "a5b47d31c556af34a302ce5d659e6fea44d90de0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ce7beea153a2ac35638b481e2f55c08d2a93c859466a58d1f310af6c31472785"
+  input-imports = [
+    "github.com/go-cmd/cmd",
+    "github.com/go-test/deep",
+    "github.com/golang/protobuf/proto",
+    "github.com/nu7hatch/gouuid",
+    "golang.org/x/net/context",
+    "google.golang.org/grpc",
+    "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/credentials",
+    "gopkg.in/yaml.v2",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
