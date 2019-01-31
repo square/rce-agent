@@ -18,6 +18,17 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+var (
+	// ConnectTimeout describes the total timeout for establishing a client
+	// connection to the rceagent server.
+	ConnectTimeout = time.Duration(10) * time.Second
+
+	// ConnectBackoffMaxDelay configures the dialer to use the
+	// provided maximum delay when backing off after
+	// failed connection attempts.
+	ConnectBackoffMaxDelay = time.Duration(2) * time.Second
+)
+
 // A Client calls a remote agent (server) to execute commands.
 type Client interface {
 	// Connect to a remote agent.
@@ -84,8 +95,8 @@ func (c *client) Open(host, port string) error {
 		// (no option to set retry count). Backoff delay = time between retries,
 		// up to Timeout.
 		grpc.WithBlock(),
-		grpc.WithTimeout(time.Duration(10)*time.Second),
-		grpc.WithBackoffMaxDelay(time.Duration(2)*time.Second),
+		grpc.WithTimeout(ConnectTimeout),
+		grpc.WithBackoffMaxDelay(ConnectBackoffMaxDelay),
 	)
 	if err != nil {
 		return err
