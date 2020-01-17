@@ -16,6 +16,7 @@ import (
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 var (
@@ -27,6 +28,14 @@ var (
 	// provided maximum delay when backing off after
 	// failed connection attempts.
 	ConnectBackoffMaxDelay = time.Duration(2) * time.Second
+
+	// KeepaliveTime is the interval at which the client sends keepalive
+	// probes to the server.
+	KeepaliveTime = time.Duration(30) * time.Second
+
+	// KeepaliveTimeout is the amount of time the client waits to receive
+	// a response from the server after a keepalive probe.
+	KeepaliveTimeout = time.Duration(20) * time.Second
 )
 
 // A Client calls a remote agent (server) to execute commands.
@@ -97,6 +106,10 @@ func (c *client) Open(host, port string) error {
 		grpc.WithBlock(),
 		grpc.WithTimeout(ConnectTimeout),
 		grpc.WithBackoffMaxDelay(ConnectBackoffMaxDelay),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:    KeepaliveTime,
+			Timeout: KeepaliveTimeout,
+		}),
 	)
 	if err != nil {
 		return err
