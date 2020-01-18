@@ -18,7 +18,7 @@ type TLSFiles struct {
 func (f TLSFiles) TLSConfig() (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(f.ClientCert, f.ClientKey)
 	if err != nil {
-		return nil, fmt.Errorf("tls.LoadX509KeyPair: %s", err)
+		return nil, fmt.Errorf("tls.LoadX509KeyPair %s %s: %s", f.ClientCert, f.ClientKey, err)
 	}
 
 	caCert, err := ioutil.ReadFile(f.RootCert)
