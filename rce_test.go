@@ -1,4 +1,4 @@
-// Copyright 2017 Square, Inc
+// Copyright 2017-2020 Square, Inc.
 
 package rce_test
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Square, Inc.
+// Copyright 2017-2020 Square, Inc.
 
 // Package cmd provides command file specs and structures used by an rce.Server.
 package cmd
@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	gocmd "github.com/go-cmd/cmd"
-	"github.com/nu7hatch/gouuid"
+	"github.com/gofrs/uuid"
 	"gopkg.in/yaml.v2"
 )
 

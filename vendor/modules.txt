@@ -2,14 +2,14 @@
 github.com/go-cmd/cmd
 # github.com/go-test/deep v1.0.5
 github.com/go-test/deep
+# github.com/gofrs/uuid v3.2.0+incompatible
+github.com/gofrs/uuid
 # github.com/golang/protobuf v1.2.0
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
-github.com/nu7hatch/gouuid
 # golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
