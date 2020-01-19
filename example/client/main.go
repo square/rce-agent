@@ -69,7 +69,7 @@ func main() {
 
 	id, err := client.Start(cmd, args[1:])
 	if err != nil {
-		log.Fatal("client.Start: %s", err)
+		log.Fatalf("client.Start: %s", err)
 	}
 
 	doneChan := make(chan struct{})
@@ -91,7 +91,7 @@ func main() {
 			case <-ticker.C:
 				status, err := client.GetStatus(id)
 				if err != nil {
-					log.Fatal("client.Wait: %s", err)
+					log.Fatalf("client.Wait: %s", err)
 				}
 				printOutput(status.Stdout, stdoutLine)
 				stdoutLine = len(status.Stdout)
@@ -105,7 +105,7 @@ func main() {
 	<-doneChan
 
 	if finalErr != nil {
-		log.Fatal("client.Wait: %s", err)
+		log.Fatalf("client.Wait: %s", err)
 	}
 
 	lnfmt := "%9s: %v\n"
