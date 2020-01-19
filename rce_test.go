@@ -118,9 +118,9 @@ func TestArgs(t *testing.T) {
 
 func TestTLSServer(t *testing.T) {
 	tlsFiles := rce.TLSFiles{
-		RootCert:   "./test/tls/test_root_ca.crt",
-		ClientCert: "./test/tls/test_server.crt",
-		ClientKey:  "./test/tls/test_server.key",
+		CACert: "./test/tls/test_root_ca.crt",
+		Cert:   "./test/tls/test_server.crt",
+		Key:    "./test/tls/test_server.key",
 	}
 	tlsConfig, err := tlsFiles.TLSConfig()
 	if err != nil {
@@ -135,9 +135,9 @@ func TestTLSServer(t *testing.T) {
 	defer s.StopServer()
 
 	tlsFiles = rce.TLSFiles{
-		RootCert:   "./test/tls/test_root_ca.crt",
-		ClientCert: "./test/tls/test_client.crt",
-		ClientKey:  "./test/tls/test_client.key",
+		CACert: "./test/tls/test_root_ca.crt",
+		Cert:   "./test/tls/test_client.crt",
+		Key:    "./test/tls/test_client.key",
 	}
 	tlsConfig, err = tlsFiles.TLSConfig()
 	if err != nil {

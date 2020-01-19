@@ -1,0 +1,11 @@
+commands:
+  - name: exit-zero
+    exec: ["/bin/bash", "-c", "exit 0"]
+  - name: exit-one
+    exec: ["/bin/bash", "-c", "exit 1"]
+  - name: echo
+    exec: ["/bin/echo"]
+  - name: ls-tmp
+    exec: ["/bin/ls", "/tmp/"]
+  - name: slow-count
+    exec: ["/tmp/slow-count.sh"]
