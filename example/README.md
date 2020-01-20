@@ -41,7 +41,7 @@ Fourth, in another terminal, run the client:
 ```bash
 $ cd client
 
-$ $ ./client ls-tmp
+$ ./client ls-tmp
 2020/01/19 16:32:58 Connecting to 127.0.0.1:5501...
        ID: 6537d416d2744284b7cd6f613e4717ae
      Name: ls-tmp
