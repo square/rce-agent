@@ -18,6 +18,8 @@ $ ./server
 CTRL-C to shut down
 ```
 
+**Note for container users:** although not covered by the present guide, the server (agent) may run inside containers. In this case, it should be started with `./server --addr 0.0.0.0:5501` to allow port mapping and hence external access.
+
 By default, the server listens on `127.0.0.1:5501`. The file `server/commands.yaml` contains the whitelist commands that the client can run:
 
 ```yaml
@@ -50,15 +52,15 @@ $ ./client ls-tmp
 StartTime: 1579469585591061000
  StopTime: 1579469585597939000
  ExitCode: 0
-    Error: 
-   Stdout: 
+    Error:
+   Stdout:
          : com.apple.launchd.O797Q43x0q
          : com.apple.launchd.zJM2uY1rsy
          : mysql.sock
          : mysql.sock.lock
          : powerlog
          : slow-count.sh
-   Stderr: 
+   Stderr:
 ```
 
 This command makes the agent run `ls /tmp`. The full STDOUT and STDERR of the remote command is always returned. The `Stdout` output should match what is actually in `/tmp` on your computer.
