@@ -4,6 +4,7 @@ package rce
 
 import (
 	"crypto/tls"
+	"errors"
 	"log"
 	"net"
 
@@ -13,6 +14,24 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+)
+
+var (
+	// ErrInvalidServerConfigAllowAnyCommand is returned by Server.StartServer() when
+	// ServerConfig.AllowAnyCommand is true but ServerConfig.AllowedCommands is non-nil.
+	ErrInvalidServerConfigAllowAnyCommand = errors.New("invalid ServerConfig: AllowAnyCommand is true but AllowedCommands is non-nil")
+
+	// ErrInvalidServerConfigDisableSecurity is returned by Server.StartServer()
+	// when ServerConfig.AllowAnyCommand is true and ServerConfig.TLS is nil but
+	// ServerConfig.DisableSecurity is false.
+	ErrInvalidServerConfigDisableSecurity = errors.New("invalid ServerConfig: AllowAnyCommand enabled but TLS is nil")
+
+	// ErrCommandNotAllowed is safeguard error returned by the internal gRPC server when
+	// ServerConfig.AllowedCommands is nil and ServerConfig.AllowAnyCommand is false.
+	// This should not happen because these values are validated in Server.StartServer()
+	// before starting the internal gRPC server. If this error occurs, there is a bug
+	// in ServerConfig validation code.
+	ErrCommandNotAllowed = errors.New("command not allowed")
 )
 
 // A Server executes a whitelist of commands when called by clients.
@@ -26,33 +45,53 @@ type Server interface {
 	pb.RCEAgentServer
 }
 
-// Internal implementation of pb.RCEAgentServer interface.
-type server struct {
-	laddr      string       // host:port listen address
-	tlsConfig  *tls.Config  // if secure
-	whitelist  cmd.Runnable // commands from config file
-	repo       cmd.Repo     // running commands
-	grpcServer *grpc.Server // gRPC server instance of this agent
+// ServerConfig configures a Server.
+type ServerConfig struct {
+	// ----------------------------------------------------------------------
+	// Required values
+
+	// Addr is the required host:post listen address.
+	Addr string
+
+	// AllowedCommands is the list of commands the server is allowed to run.
+	// By default, no commands are allowed; commands must be explicitly allowed.
+	AllowedCommands cmd.Runnable
+
+	// ----------------------------------------------------------------------
+	// Optional values
+
+	// AllowAnyCommand allows any commands if AllowedCommands is nil.
+	// This is not recommended. If true, TLS must be specified (non-nil);
+	// or, to enable AllowAnyCommand without TLS, DisableSecurity must be true.
+	AllowAnyCommand bool
+
+	// DisableSecurity allows AllowAnyCommand without TLS: an insecure server that
+	// can execute any command from any client.
+	//
+	// This option should not be used.
+	DisableSecurity bool
+
+	// TLS specifies the TLS configuration for secure and verified communication.
+	// Use TLSFiles.TLSConfig() to load TLS files and configure for server and
+	// client verification.
+	TLS *tls.Config
 }
 
-// NewServer makes a new Server that listens on laddr and runs the whitelist
-// of commands. If tlsConfig is nil, the sever is insecure.
-func NewServer(laddr string, tlsConfig *tls.Config, whitelist cmd.Runnable) Server {
+func NewServerWithConfig(cfg ServerConfig) Server {
 	// Set log flags here so other pkgs can't override in their init().
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile | log.LUTC)
 
 	s := &server{
-		laddr:     laddr,
-		tlsConfig: tlsConfig,
-		repo:      cmd.NewRepo(),
-		whitelist: whitelist,
+		cfg: cfg,
+		// --
+		repo: cmd.NewRepo(),
 	}
 
 	// Create a gRPC server and register this agent a implementing the
 	// RCEAgentServer interface and protocol
 	var grpcServer *grpc.Server
-	if tlsConfig != nil {
-		opt := grpc.Creds(credentials.NewTLS(tlsConfig))
+	if cfg.TLS != nil {
+		opt := grpc.Creds(credentials.NewTLS(cfg.TLS))
 		grpcServer = grpc.NewServer(opt)
 	} else {
 		grpcServer = grpc.NewServer()
@@ -62,26 +101,62 @@ func NewServer(laddr string, tlsConfig *tls.Config, whitelist cmd.Runnable) Serv
 	return s
 }
 
+// Internal implementation of pb.RCEAgentServer interface.
+type server struct {
+	cfg ServerConfig
+	// --
+	repo       cmd.Repo     // running commands
+	grpcServer *grpc.Server // gRPC server instance of this agent
+}
+
+// NewServer makes a new Server that listens on laddr and runs the whitelist
+// of commands. If tlsConfig is nil, the sever is insecure.
+func NewServer(laddr string, tlsConfig *tls.Config, whitelist cmd.Runnable) Server {
+	return NewServerWithConfig(ServerConfig{
+		Addr:            laddr,
+		AllowedCommands: whitelist,
+		TLS:             tlsConfig,
+	})
+}
+
 func (s *server) StartServer() error {
+	// Validate the combination of server configs that disable security
+	if s.cfg.AllowAnyCommand {
+		// To allow any command, there can't be any allow list
+		if s.cfg.AllowedCommands != nil {
+			return ErrInvalidServerConfigAllowAnyCommand
+		} else {
+			log.Printf("\nWARNING: all commands are allowed!\n")
+		}
+
+		// And to to allow any command without TLS, the user must explicitly
+		// disble all security
+		if s.cfg.TLS == nil && !s.cfg.DisableSecurity {
+			return ErrInvalidServerConfigDisableSecurity
+		} else {
+			log.Printf("\nWARNING: all security is disabled!\n")
+		}
+	}
+
 	// Register the RCEAgent service with the gRPC server.
 	pb.RegisterRCEAgentServer(s.grpcServer, s)
 
-	lis, err := net.Listen("tcp", s.laddr)
+	lis, err := net.Listen("tcp", s.cfg.Addr)
 	if err != nil {
 		return err
 	}
 	go s.grpcServer.Serve(lis)
-	if s.tlsConfig != nil {
-		log.Printf("secure server listening on %s", s.laddr)
+	if s.cfg.TLS != nil {
+		log.Printf("secure server listening on %s", s.cfg.Addr)
 	} else {
-		log.Printf("insecure server listening on %s", s.laddr)
+		log.Printf("insecure server listening on %s", s.cfg.Addr)
 	}
 	return nil
 }
 
 func (s *server) StopServer() error {
 	s.grpcServer.GracefulStop()
-	log.Printf("server stopped on %s", s.laddr)
+	log.Printf("server stopped on %s", s.cfg.Addr)
 	return nil
 }
 
@@ -90,25 +165,42 @@ func (s *server) StopServer() error {
 // //////////////////////////////////////////////////////////////////////////
 
 func (s *server) Start(ctx context.Context, c *pb.Command) (*pb.ID, error) {
-	id := &pb.ID{}
+	id := &pb.ID{} // @todo we return this on error, but should be "return nil, <err>"
 
-	spec, err := s.whitelist.FindByName(c.Name)
-	if err != nil {
-		log.Printf("unknown command: %s", c.Name)
-		return id, grpc.Errorf(codes.InvalidArgument, "unknown command: %s", c.Name)
+	var rceCmd *cmd.Cmd // from AllowedCommands or an arbitrary if AllowAnyCommand
+	var path string     // for logging below
+	if s.cfg.AllowedCommands != nil {
+		spec, err := s.cfg.AllowedCommands.FindByName(c.Name)
+		if err != nil {
+			log.Printf("unknown command: %s", c.Name)
+			return id, grpc.Errorf(codes.InvalidArgument, "unknown command: %s", c.Name)
+		}
+		// Append cmd request args to cmd spec args
+		rceCmd = cmd.NewCmd(spec, append(spec.Args(), c.Arguments...))
+
+		path = spec.Path()
+	} else if s.cfg.AllowAnyCommand {
+		// Make a spec for this arbitrary command
+		spec := cmd.Spec{
+			Name: c.Name,      // any command, like "/usr/local/bin/gofmt"
+			Exec: c.Arguments, // args to ^
+		}
+		rceCmd = cmd.NewCmd(spec, append(spec.Args(), c.Arguments...))
+
+		path = c.Name
+	} else {
+		return id, ErrCommandNotAllowed
 	}
 
-	// Append cmd request args to cmd spec args
-	cmd := cmd.NewCmd(spec, append(spec.Args(), c.Arguments...))
-	if err := s.repo.Add(cmd); err != nil {
+	if err := s.repo.Add(rceCmd); err != nil {
 		// This should never happen
-		log.Printf("duplicate command: %+v", cmd)
-		return id, grpc.Errorf(codes.AlreadyExists, "duplicate command: %s", cmd.Id)
+		log.Printf("duplicate command: %+v", rceCmd)
+		return id, grpc.Errorf(codes.AlreadyExists, "duplicate command: %s", rceCmd.Id)
 	}
 
-	log.Printf("cmd=%s: start: %s path: %s args: %v", cmd.Id, c.Name, spec.Path(), cmd.Args)
-	cmd.Cmd.Start()
-	id.ID = cmd.Id
+	log.Printf("cmd=%s: start: %s path: %s args: %v", rceCmd.Id, c.Name, path, rceCmd.Args)
+	rceCmd.Cmd.Start()
+	id.ID = rceCmd.Id
 	return id, nil
 }
 

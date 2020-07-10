@@ -1,6 +1,6 @@
 # RCE Agent
 
-[![Build Status](https://travis-ci.org/square/rce-agent.svg?branch=master)](https://travis-ci.org/square/rce-agent) [![Go Report Card](https://goreportcard.com/badge/github.com/square/rce-agent)](https://goreportcard.com/report/github.com/square/rce-agent) [![GoDoc](https://godoc.org/github.com/square/rce-agent?status.svg)](https://godoc.org/github.com/square/rce-agent)
+[![Build Status](https://travis-ci.org/square/rce-agent.svg?branch=master)](https://travis-ci.org/square/rce-agent) [![Go Report Card](https://goreportcard.com/badge/github.com/square/rce-agent)](https://goreportcard.com/report/github.com/square/rce-agent) [![GoDoc](https://godoc.org/github.com/square/rce-agent?status.svg)](https://pkg.go.dev/github.com/square/rce-agent?tab=doc)
 
 rce-agent is a gRPC-based Remote Command Execution (RCE) client and server.
 The server (or "agent") runs on a remote host and executes a whitelist of
