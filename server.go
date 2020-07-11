@@ -126,7 +126,7 @@ func (s *server) StartServer() error {
 		if s.cfg.AllowedCommands != nil {
 			return ErrInvalidServerConfigAllowAnyCommand
 		} else {
-			log.Printf("\nWARNING: all commands are allowed!\n")
+			log.Printf("WARNING: all commands are allowed!\n")
 		}
 
 		// And to to allow any command without TLS, the user must explicitly
@@ -134,7 +134,7 @@ func (s *server) StartServer() error {
 		if s.cfg.TLS == nil && !s.cfg.DisableSecurity {
 			return ErrInvalidServerConfigDisableSecurity
 		} else {
-			log.Printf("\nWARNING: all security is disabled!\n")
+			log.Printf("WARNING: all security is disabled!\n")
 		}
 	}
 
@@ -182,10 +182,10 @@ func (s *server) Start(ctx context.Context, c *pb.Command) (*pb.ID, error) {
 	} else if s.cfg.AllowAnyCommand {
 		// Make a spec for this arbitrary command
 		spec := cmd.Spec{
-			Name: c.Name,      // any command, like "/usr/local/bin/gofmt"
-			Exec: c.Arguments, // args to ^
+			Name: c.Name, // any command, like "/usr/local/bin/gofmt"
+			Exec: append([]string{c.Name}, c.Arguments...),
 		}
-		rceCmd = cmd.NewCmd(spec, append(spec.Args(), c.Arguments...))
+		rceCmd = cmd.NewCmd(spec, spec.Exec)
 
 		path = c.Name
 	} else {
