@@ -4,6 +4,7 @@ package rce_test
 
 import (
 	"context"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -287,9 +288,32 @@ func TestServerAnyCommand(t *testing.T) {
 	}
 	s := rce.NewServerWithConfig(cfg)
 
+	// Run "go version" to check that any command is allowed and it works with
+	// arguments. We'll run it for real to get the output, then run it via the
+	// RCE server and compare outputs to make sure it's correct.
+	out, err := exec.Command("which", "go").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(out) == "" {
+		t.Fatal("'which go' did not return go binary path")
+	}
+	gobin := strings.TrimSpace(string(out))
+	t.Logf("go bin: %s", gobin)
+
+	out, err = exec.Command(string(gobin), "version").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(out) == "" {
+		t.Fatalf("'%s version' did not return anything", string(gobin))
+	}
+	gover := strings.TrimSpace(string(out))
+	t.Logf("go ver: %s", gover)
+
 	c := &pb.Command{
-		Name:      "env",
-		Arguments: []string{},
+		Name:      string(gobin),
+		Arguments: []string{"version"},
 	}
 
 	id, err := s.Start(context.TODO(), c)
@@ -314,14 +338,9 @@ func TestServerAnyCommand(t *testing.T) {
 		t.Errorf("got ExitCode = %d, expected 0", gotStatus.ExitCode)
 	}
 
-	outputOK := false
-	for _, line := range gotStatus.Stdout {
-		if strings.Contains(line, "PATH=") {
-			outputOK = true
-			break
-		}
-	}
-	if !outputOK {
-		t.Errorf("STDOUT does not contain PATH=, expected from env command: %v", gotStatus.Stdout)
+	if len(gotStatus.Stdout) != 1 {
+		t.Errorf("got %d lines of stdout, expected 1: %v", len(gotStatus.Stdout), gotStatus.Stdout)
+	} else if gotStatus.Stdout[0] != gover {
+		t.Errorf("stdout = '%s', expected '%s'", gotStatus.Stdout[0], string(gover))
 	}
 }

@@ -185,7 +185,7 @@ func (s *server) Start(ctx context.Context, c *pb.Command) (*pb.ID, error) {
 			Name: c.Name, // any command, like "/usr/local/bin/gofmt"
 			Exec: append([]string{c.Name}, c.Arguments...),
 		}
-		rceCmd = cmd.NewCmd(spec, spec.Exec)
+		rceCmd = cmd.NewCmd(spec, c.Arguments)
 
 		path = c.Name
 	} else {
