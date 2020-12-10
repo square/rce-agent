@@ -3,3 +3,5 @@ commands:
     exec: [/bin/bash, -c, "exit 0"]
   - name: echo
     exec: [/bin/echo]
+  - name: sleep60
+    exec: [/bin/sleep, 60]
