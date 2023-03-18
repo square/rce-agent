@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Square, Inc.
+// Copyright 2017-2023 Block, Inc.
 
 // Package cmd provides command file specs and structures used by an rce.Server.
 package cmd
@@ -90,14 +90,14 @@ type specFile struct {
 
 // LoadCommands loads all command Spec from a YAML config file. The file structure is:
 //
-//   ---
-//   commands:
-//     - name: exit.zero
-//       exec: [/usr/bin/true]
-//	   - name: exit.one
-//	     exec:
-//         - /bin/false
-//         - some-arg
+//	  ---
+//	  commands:
+//	    - name: exit.zero
+//	      exec: [/usr/bin/true]
+//		   - name: exit.one
+//		     exec:
+//	        - /bin/false
+//	        - some-arg
 //
 // Name must be unique. The first exec value must be an absolute command path.
 // Additional exec values are optional and always included in the order listed.

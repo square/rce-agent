@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Square, Inc.
+// Copyright 2017-2023 Block, Inc.
 
 package rce
 

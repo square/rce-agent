@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Square, Inc.
+// Copyright 2017-2023 Block, Inc.
 
 // Package rce provides a gRPC-based Remote Code Execution client and server.
 // The server (or "agent") runs on a remote host and executes a whitelist of
