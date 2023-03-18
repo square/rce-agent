@@ -94,8 +94,8 @@ type specFile struct {
 //	  commands:
 //	    - name: exit.zero
 //	      exec: [/usr/bin/true]
-//		   - name: exit.one
-//		     exec:
+//		- name: exit.one
+//		  exec:
 //	        - /bin/false
 //	        - some-arg
 //
