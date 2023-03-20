@@ -1,4 +1,4 @@
-// Copyright 2020 Square, Inc.
+// Copyright 2017-2023 Block, Inc.
 
 /*
 	This is an example RCE client. It uses an rce.Client (which uses a gRPC client)

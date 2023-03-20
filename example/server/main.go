@@ -1,4 +1,4 @@
-// Copyright 2020 Square, Inc.
+// Copyright 2017-2023 Block, Inc.
 
 /*
 	This is an example RCE server (agent). It uses an rce.Server (which uses a
