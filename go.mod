@@ -3,13 +3,13 @@ module github.com/square/rce-agent
 go 1.20
 
 require (
-	github.com/go-cmd/cmd v1.2.0
-	github.com/go-test/deep v1.0.6
-	github.com/gofrs/uuid v3.3.0+incompatible
+	github.com/go-cmd/cmd v1.4.3
+	github.com/go-test/deep v1.1.1
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/protobuf v1.5.3
 	golang.org/x/net v0.23.0
 	google.golang.org/grpc v1.56.3
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
